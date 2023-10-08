@@ -14,14 +14,10 @@ return new class extends Migration
         Schema::create('vee2_listas', function (Blueprint $table) {
             $table->id();
             $table->string('tipo', 255);
-            //$table->string('prefijo', 255)->nullable();
             $table->string('nombre', 255);
-            //$table->string('sufijo', 255)->nullable();
             $table->string('valor_texto', 255)->nullable();
             $table->unsignedBigInteger('valor_numero')->nullable();
             $table->unsignedInteger('tipo_valor')->default(1);
-            //$table->string('formato', 255)->default('@nombre');
-            $table->unsignedBigInteger('id_padre')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
         });

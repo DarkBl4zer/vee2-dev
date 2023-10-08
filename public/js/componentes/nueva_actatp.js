@@ -4,7 +4,7 @@ window.onload = (event) => {
     })
 };
 
-function ConfirmarGuardarNuevaActa(){
+function ConfirmarGuardarNuevaActaTP(){
     let valido = true;
     let requeridos = ['nombreActa', 'inputActa'];
     requeridos.forEach(item => {
@@ -14,27 +14,21 @@ function ConfirmarGuardarNuevaActa(){
     });
     if (valido) {
         $('#confirmacionMsj').html('¿Seguro desea guardar la nueva acta?');
-        $('#confirmacionBtn').attr("onclick","GuardarNuevaActa();");
+        $('#confirmacionBtn').attr("onclick","GuardarNuevaActaTP();");
         Mostrar('confirmacionModal');
     }
 }
 
-function GuardarNuevaActa(){
-    Ocultar('modalNuevaActa');
-    _MSJ("success", "¡Registrado!", function() {
-        location.reload();
-    });
-    //************ TODO Guardado de acta *****************************
-    /*let datos = new FormData(document.getElementById('formActa'));
-    datos.append('nombreActa',$('#nombreActa').val());
-    _RQ('POST','/back/guardar_frima', datos, function(result) {$('#loading').hide();
+function GuardarNuevaActaTP(){
+    let datos = new FormData(document.getElementById('formActa'));
+    _RQ('POST','/back/guardar_actatp', datos, function(result) {
         _MSJ(result.tipo, result.txt, function() {
             location.reload();
         });
-    }, true);*/
+    }, true);
 }
 
-function LimpiarNuevaActa(){
+function LimpiarNuevaActaTP(){
     RemoveInvalid('nombreActa');
     RemoveInvalid('inputActa');
     $('#nombreActa').val('');

@@ -36,8 +36,8 @@ class MenusSeed extends Seeder
             array('nombre' => 'Firma', 'url' => 'config/firma', 'orden' => 3),
         ];
         $subs[3]=[
-            array('nombre' => 'Temas', 'url' => 'temasp/listar', 'orden' => 1),
-            array('nombre' => 'Actas', 'url' => 'actas/listar', 'orden' => 2),
+            array('nombre' => 'Actas', 'url' => 'actas/listar', 'orden' => 1),
+            array('nombre' => 'Temas', 'url' => 'temasp/listar', 'orden' => 2),
         ];
         $subs[5]=[
             array('nombre' => 'Listar acciones', 'url' => 'accionespyc/listar', 'orden' => 1),

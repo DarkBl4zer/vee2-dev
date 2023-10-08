@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('vee2_actas', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_delegada')->nullable();
             $table->unsignedInteger('tipo_acta');
             $table->string('descripcion', 255)->nullable();
             $table->unsignedBigInteger('id_accion')->nullable();
             $table->boolean('aprobada')->nullable();
             $table->string('archivo', 255)->nullable();
             $table->string('nombre_archivo', 255)->nullable();
+            $table->boolean('activo')->default(true);
             $table->timestamps();
         });
     }

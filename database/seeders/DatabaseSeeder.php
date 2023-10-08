@@ -22,6 +22,5 @@ class DatabaseSeeder extends Seeder
         $this->call(RolMenuSeed::class);
         $this->call(RolSubMenuSeed::class);
         $this->call(ListasSeed::class);
-        $this->call(ConfigActasSeed::class);
     }
 }

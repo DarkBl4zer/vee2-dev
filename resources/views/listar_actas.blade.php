@@ -27,7 +27,9 @@ Listar Temas
         </div>
     </div>
     <div class="card-body" style="position: relative;">
+        @if ($permiteNueva)
         <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nueva acta" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
+        @endif
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 14px;">
             </table>
@@ -37,8 +39,44 @@ Listar Temas
 
 @include('componentes.nueva_acta')
 
+<!-- Modal Reemplazar -->
+<div class="modal fade" id="modalReemplazar" tabindex="-1" role="dialog" aria-labelledby="modalReemplazarLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalReemplazarLabel">Reemplazar acta</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="actaReemplazo">Reemplazar por <sup style="color: var(--danger)">*</sup></label>
+                        <select class="form-control select2" id="actaReemplazo" name="actaReemplazo" style="font-size: 14px;">
+                            <option value="">...</option>
+                            @foreach ($actas as $item)
+                            <option id="op{{$item->id}}" value="{{$item->id}}">{{$item->descripcion}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            <button id="btnGuardarReemplazo" type="button" class="btn btn-primary">Guardar</button>
+        </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @section('Xscripts')
+    <script>
+        var puedeEditar = {{($permiteNueva)?'true':'false'}};
+    </script>
     <!-- Page level plugins -->
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>

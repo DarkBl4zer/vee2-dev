@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('vee2_temas', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_delegada');
             $table->string('nombre', 255);
             $table->unsignedInteger('nivel');
             $table->boolean('activo')->default(true);
+            $table->boolean('eliminado')->default(false);
             $table->unsignedBigInteger('id_acta');
             $table->unsignedBigInteger('id_padre')->nullable();
             $table->timestamps();

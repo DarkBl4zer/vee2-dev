@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_usuario');
             $table->string('tipo', 100);
             $table->string('modelo', 255);
+            $table->unsignedBigInteger('id_modelo');
             $table->string('old_json', 4000)->nullable();
             $table->string('new_json', 4000);
             $table->timestamps();

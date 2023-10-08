@@ -11,14 +11,10 @@ class ListasModel extends Model
     protected $table = 'vee2_listas';
     protected $fillable = [
         'tipo',
-        //'prefijo',
         'nombre',
-        //'sufijo',
         'valor_texto',
         'valor_numero',
         'tipo_valor',
-        //'formato',
-        'id_padre',
         'activo'
     ];
     protected $guarded = ['id'];

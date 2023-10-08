@@ -151,10 +151,10 @@ function LimpiarRequerido(requeridos){
 
 function FiltrarCaracteres(id, tipo){
     let valor = $('#'+id).val();
-    if (tipo == 'valor_texto' || tipo == 'texto1' || tipo == 'texto') {
+    if (tipo == 'valorItem') {
         $('#'+id).val(valor.replace(/\W/g, '').toUpperCase());
     }
-    if (tipo == 'texto2') {
+    if (tipo == 'itemLista') {
         $('#'+id).val(valor.replace(/[^\wÀ-ú0-9 -]/g, '').toUpperCase());
     }
     ValidarCampo(id);

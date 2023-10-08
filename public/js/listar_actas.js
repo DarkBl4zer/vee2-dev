@@ -6,33 +6,42 @@ var plantillaHTML = new PlantillaHTML();
 function ConsultarActas(){
     $('#loading').show();
     LimpiarTabla('dataTable');
-    let datos = [
-        {id:1, nombre:"ACTA INICIAL DE TEMAS", activo:1, fecha:"19/09/2023"},
-        {id:2, nombre:"ACTA DE PRUEBA 2", activo:1, fecha:"19/09/2023"},
-        {id:3, nombre:"ACTA DE PRUEBA 3", activo:1, fecha:"19/09/2023"},
-        {id:4, nombre:"ACTA DE PRUEBA 4", activo:1, fecha:"19/09/2023"},
-        {id:5, nombre:"ACTA DE PRUEBA 5", activo:1, fecha:"19/09/2023"},
-        {id:6, nombre:"ACTA DE PRUEBA 6", activo:1, fecha:"19/09/2023"},
-        {id:7, nombre:"ACTA DE PRUEBA 7", activo:1, fecha:"19/09/2023"},
-        {id:8, nombre:"ACTA DE PRUEBA 8", activo:1, fecha:"19/09/2023"},
-    ];
-    LlenaTabla(datos);
+    _RQ('GET','/back/actas_tp', null, function(result) {$('#loading').hide();
+        LlenaTabla(result);
+    });
 }
 
 function LlenaTabla(datosTabla) {
     let filas = [];
     let columns = [
         {title: "Nombre"},
+        {title: "Archivo"},
         {title: "Fecha"},
         {title: "Estado"},
         {title: "Acciones"}
     ];
     datosTabla.forEach(element => {
         let columna = [];
-        columna.push(element.nombre);
-        columna.push(element.fecha);
-        columna.push(plantillaHTML.itemEstadoTabla(element, "acta"));
-        columna.push(plantillaHTML.itemEliminarTabla(element, "acta"));
+        columna.push(element.descripcion);
+        columna.push(plantillaHTML.itemLinkTabla({
+            xid: "Archivo",
+            id: `'${element.archivo}'`,
+            texto: element.nombre_archivo
+        }));
+        columna.push(element.creado);
+        if (puedeEditar) {
+            columna.push(plantillaHTML.itemEstadoTabla({
+                activo: element.activo,
+                id: element.id
+            }));
+            columna.push(plantillaHTML.itemAccionesTabla({
+                id: element.id,
+                reemplazar: true
+            }));
+        } else {
+            columna.push('');
+            columna.push('');
+        }
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -41,7 +50,8 @@ function LlenaTabla(datosTabla) {
         columns: columns,
         data: filas,
         columnDefs: [
-            {targets: [2,3], className: "align-middle text-center", width: "70px"}
+            {targets: [3,4], className: "align-middle text-center", width: "70px"},
+            {targets: '_all', className: "align-middle"}
         ],
         language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
     });
@@ -64,4 +74,60 @@ $('#dataTable').on('draw.dt', function () {
 
 function Nuevo() {
     Mostrar('modalNuevaActa');
+}
+
+function ClickLinkArchivo(archivo) {
+    window.open('/back/descargar_archivo/?carpeta=vee2_cargados&archivo='+archivo, '_blank');
+}
+
+function ConfirmarActivar(id, activar){
+    let tipo = (activar)?'<span style="font-weight: bold; color: var(--success);">activar</span>':'<span style="font-weight: bold; color: var(--danger);">inactivar</span>';
+    $('#confirmacionMsj').html('¿Seguro desea '+tipo+' el acta seleccionada?');
+    $('#confirmacionBtn').attr("onclick","Activar("+id+", "+activar+");");
+    $('#confirmacionBtn').prop('disabled', false);
+    Mostrar('confirmacionModal');
+}
+
+function Activar(id, activar){
+    $('#confirmacionBtn').prop('disabled', true);
+    let datos = {id,activar};
+    _RQ('POST','/back/activar_acta', datos, function(result) {
+        Ocultar('confirmacionModal');
+        _MSJ(result.tipo, result.txt, function() {
+            ConsultarActas();
+        });
+    });
+}
+
+function Reemplazar(id) {
+    $('#actaReemplazo').find('option').show();
+    $('#op'+id).hide();
+    $('#btnGuardarReemplazo').attr('onclick', 'ConfirmarReemplazarActa('+id+');');
+    Mostrar('modalReemplazar');
+}
+
+function ConfirmarReemplazarActa(id){
+    let valido = true;
+    if (!ValidarCampo('actaReemplazo')) {
+        valido = false;
+    }
+    if (valido) {
+        $('#confirmacionMsj').html('¿Seguro desea reemplazar el acta?');
+        $('#confirmacionBtn').attr("onclick","Guardar("+id+");");
+        Mostrar('confirmacionModal');
+    }
+}
+
+function Guardar(id){
+    Ocultar('modalReemplazar');
+    Ocultar('confirmacionModal');
+    let datos = {
+        id,
+        reemplazo: $('#actaReemplazo').val()
+    };
+    _RQ('POST','/back/reemplazar_acta', datos, function(result) {
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+            ConsultarActas();
+        });
+    });
 }

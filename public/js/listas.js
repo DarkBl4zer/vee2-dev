@@ -37,13 +37,32 @@ function LlenaTabla(datos) {
     let filas = [];
     datos.forEach(element => {
         let columna = [];
-        columna.push(plantillaHTML.itemInputText(element, 2));
-        columna.push(plantillaHTML.itemValorTabla(element));
+        columna.push(plantillaHTML.itemInputText({
+            id: element.id,
+            xid: "Nombre"+element.id,
+            valor: element.nombre,
+            filtro: "itemLista",
+            max: 250
+        }));
+        columna.push(plantillaHTML.itemValorLista({
+            id: element.id,
+            tipo_valor: element.tipo_valor,
+            valor_numero: element.valor_numero,
+            valor_texto: element.valor_texto,
+            filtro: "valorItem",
+            max: 15
+        }));
         let tipoValor = $('#plantillaTipoValor').html();
         columna.push(tipoValor.replaceAll('@valor', element.tvalorn).replaceAll('@id', element.id));
-        columna.push(plantillaHTML.itemInputNumber(element));
-        columna.push(plantillaHTML.itemEstadoTabla(element));
-        columna.push(plantillaHTML.itemAccionesTabla(element));
+        columna.push(plantillaHTML.itemEstadoTabla({
+            activo: element.activo,
+            id: element.id
+        }));
+        columna.push(plantillaHTML.itemAccionesTabla({
+            id: element.id,
+            editar: true,
+            guardar: true
+        }));
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -53,14 +72,13 @@ function LlenaTabla(datos) {
             {title: "Nombre"},
             {title: "Valor"},
             {title: "Tipo de valor"},
-            {title: "Elemento padre"},
             {title: "Estado"},
             {title: "Acciones"}
         ],
         data: filas,
         columnDefs: [
-            {targets: 4, className: "text-center"},
-            {targets: 5, className: "align-middle text-center"}
+            {targets: [3,4], className: "align-middle text-center", width: "70px"},
+            {targets: '_all', className: "align-middle"}
         ],
         language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
     });
@@ -94,33 +112,23 @@ function Editar(id){
 
 function ConfirmarGuardar(id){
     let valido = true;
-    let regex = /(\@prefijo|\@nombre|\@sufijo)\b/;
-    if ($('#textT4Id'+id).val() != '' && !regex.test($('#textT4Id'+id).val())) {
-        $('#textT4Id'+id).addClass('is-invalid');
-        valido = false;
-    }else{
-        $('#textT4Id'+id).removeClass('is-invalid');
+    let requeridos = ['inputTextNombre'+id];
+    if ($('#tipoValor'+id).val()!=1) {
+        requeridos.push('valorT'+$('#tipoValor'+id).val()+'Id'+id);
     }
-    if (id != 0) {
-        if ($('.inputFila'+id).is(":visible")) {
-            if (valido) {
-                $('#confirmacionMsj').html('¿Seguro desea guardar los cambios realizados?');
-                $('#confirmacionBtn').attr("onclick","Guardar("+id+");");
-                Mostrar('confirmacionModal');
-            }
+    requeridos.forEach(item => {
+        if (!ValidarCampo(item)) {
+            valido = false;
         }
-    } else {
-        let requeridos = ['textT2Id0'];
-        requeridos.forEach(item => {
-            if (!ValidarCampo(item)) {
-                valido = false;
-            }
-        });
-        if (valido) {
-            $('#confirmacionMsj').html('¿Seguro desea guardar el nuevo item?');
-            $('#confirmacionBtn').attr("onclick","Guardar("+id+");");
-            Mostrar('confirmacionModal');
+    });
+    if (valido) {
+        let txtMensaje = '¿Seguro desea guardar el nuevo item?';
+        if (id != 0) {
+            txtMensaje = '¿Seguro desea guardar los cambios realizados?';
         }
+        $('#confirmacionMsj').html(txtMensaje);
+        $('#confirmacionBtn').attr("onclick","Guardar("+id+");");
+        Mostrar('confirmacionModal');
     }
 }
 
@@ -129,20 +137,15 @@ function Guardar(id){
     let datos = {
         id,
         tipo: $('#lista').val(),
-        prefijo: $('#textT1Id'+id).val(),
-        nombre: $('#textT2Id'+id).val(),
-        sufijo: $('#textT3Id'+id).val(),
+        nombre: $('#inputTextNombre'+id).val(),
         valor_numero: $('#valorT2Id'+id).val(),
         valor_texto: $('#valorT3Id'+id).val(),
-        tipo_valor: $('#tipoValor'+id).val(),
-        formato: $('#textT4Id'+id).val(),
-        id_padre: $('#numberId'+id).val()
+        tipo_valor: $('#tipoValor'+id).val()
     };
-    _RQ('POST','/back/crear_actualizar_item_lista', datos, function(result) {$('#loading').hide();
-        _MSJ(result.tipo, result.txt, function() {
+    _RQ('POST','/back/crear_actualizar_item_lista', datos, function(result) {
+        console.log(result);
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
             ConsultarLista($('#lista').val());
-            $('#btnNuevo').prop('disabled', false);
-            DisableI('btnNuevo', false, 'Nuevo();');
         });
     });
 }
@@ -151,24 +154,35 @@ function Nuevo(){
     DisableI('btnNuevo', true);
     let element = {
         id: 0,
-        prefijo: null,
         nombre: null,
-        sufijo: null,
         valor_numero: null,
         valor_texto: null,
         tipo_valor: 1,
-        formato: null,
-        id_padre: null,
-        tvalorn: null
+        tvalorn: ""
     };
     let columna = [];
-    columna.push(plantillaHTML.itemInputText(element, 2));
-    columna.push(plantillaHTML.itemValorTabla(element));
+    columna.push(plantillaHTML.itemInputText({
+        id: element.id,
+        xid: "Nombre"+element.id,
+        valor: element.nombre,
+        filtro: "itemLista",
+        max: 250
+    }));
+    columna.push(plantillaHTML.itemValorLista({
+        id: element.id,
+        tipo_valor: element.tipo_valor,
+        valor_numero: element.valor_numero,
+        valor_texto: element.valor_texto,
+        filtro: "valorItem",
+        max: 15
+    }));
     let tipoValor = $('#plantillaTipoValor').html();
-    columna.push(tipoValor.replaceAll('@valor', '').replaceAll('@id', element.id));
-    columna.push(plantillaHTML.itemInputNumber(element));
-    columna.push('');
-    columna.push(plantillaHTML.itemAccionesTabla(element));
+    columna.push(tipoValor.replaceAll('@valor', element.tvalorn).replaceAll('@id', element.id));
+    columna.push("");
+    columna.push(plantillaHTML.itemAccionesTabla({
+        id: element.id,
+        guardar: true
+    }));
     dataTable.row.add(columna).draw(false);
     dataTable.order([1, 'asc']).draw();
     dataTable.order([0, 'asc']).draw();
@@ -185,7 +199,7 @@ function ConfirmarActivar(id, activar){
 function Activar(id, activar){
     $('#confirmacionBtn').prop('disabled', true);
     let datos = {id,activar};
-    _RQ('POST','/back/activar_item', datos, function(result) {$('#loading').hide();
+    _RQ('POST','/back/activar_item', datos, function(result) {
         Ocultar('confirmacionModal');
         _MSJ(result.tipo, result.txt, function() {
             ConsultarLista($('#lista').val());

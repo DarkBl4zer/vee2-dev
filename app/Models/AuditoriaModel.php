@@ -14,6 +14,7 @@ class AuditoriaModel extends Model
         'id_usuario',
         'tipo',
         'modelo',
+        'id_modelo',
         'old_json',
         'new_json'
     ];

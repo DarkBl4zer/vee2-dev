@@ -34,28 +34,29 @@ class Controller extends BaseController
         return Redirect::to($config->t_valor."config/cerrar_session.php");
     }
 
-    public function MsjRespuesta($exito, $error=false){
+    public function MsjRespuesta($exito, $error=false, $code=500){
         if ($exito) {
             return response()->json(array(
                 "estado"=>true,
                 "tipo"=>"success",
                 "txt"=>"¡Registrado!"
-            ));
+            ), 200);
         } else {
             return response()->json(array(
                 "estado"=>false,
                 "tipo"=>"error",
                 "txt"=>"¡Error!, detalle en consola.",
                 "error"=>$error
-            ),500);
+            ),$code);
         }
     }
 
-    public function Auditoria($id_usuario, $tipo, $modelo, $old, $new){
+    public function Auditoria($id_usuario, $tipo, $modelo, $id_modelo, $old, $new){
         AuditoriaModel::create(array(
             'id_usuario' => $id_usuario,
             'tipo' => $tipo,
             'modelo' => $modelo,
+            'id_modelo' => $id_modelo,
             'old_json' => ($old != null)?json_encode($old, JSON_UNESCAPED_UNICODE):null,
             'new_json' => json_encode($new, JSON_UNESCAPED_UNICODE)
         ));

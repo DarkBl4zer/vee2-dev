@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 date_default_timezone_set('America/Bogota');
 
+use App\Models\ActasModel;
 use App\Models\ConfiguracionesModel;
 use App\Models\DelegadasModel;
 use App\Models\ListasModel;
 use App\Models\RolesModel;
+use App\Models\TemasPModel;
 use App\Models\UsuarioNotificacionModel;
 use App\Models\UsuariosModel;
 use Illuminate\Http\Request;
@@ -103,16 +105,32 @@ class FrontendController extends Controller
         return view('listas', compact('sesion', 'listas', 'tipoValor', 'slag'));
     }
 
-    public function ListarTemas(Request $request){
-        $sesion = (object)$request->sesion;
-        $slag = 'temasprioritarios';
-        return view('listar_temas', compact('sesion', 'slag'));
-    }
-
     public function ListarActas(Request $request){
         $sesion = (object)$request->sesion;
+        $permiteNueva = true;
+        if($sesion->trabajo->id_rol < 3){
+            $permiteNueva = false;
+            $actas = ActasModel::where('tipo_acta', 1)->get();
+        } else{
+            $actas = ActasModel::where('tipo_acta', 1)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+        }
         $slag = 'temasprioritarios';
-        return view('listar_actas', compact('sesion', 'slag'));
+        return view('listar_actas', compact('sesion', 'slag', 'permiteNueva', 'actas'));
+    }
+
+    public function ListarTemas(Request $request){
+        $sesion = (object)$request->sesion;
+        $permiteNueva = true;
+        if($sesion->trabajo->id_rol < 3){
+            $permiteNueva = false;
+            $actas = ActasModel::where('tipo_acta', 1)->where('activo', true)->get();
+            $temasp = TemasPModel::where('nivel', 1)->where('eliminado', false)->where('activo', true)->get();
+        } else{
+            $actas = ActasModel::where('tipo_acta', 1)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+            $temasp = TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->where('eliminado', false)->where('activo', true)->get();
+        }
+        $slag = 'temasprioritarios';
+        return view('listar_temas', compact('sesion', 'slag', 'actas', 'temasp', 'permiteNueva'));
     }
 
     public function ListarAccionesPyC(Request $request){

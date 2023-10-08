@@ -5,61 +5,31 @@ $(document).ready(function() {
 var plantillaHTML = new PlantillaHTML();
 var datosTabla, dataTable;
 datosTabla = dataTable = null;
-function ConsultarTemas(tipo){
-    $('#loading').show();
+
+function ConsultarTemas(){
     DisableI('btnNuevo', false, 'Nuevo();');
     $('#btnNuevo').hide();
+    ValidarCampo('lista');
     LimpiarTabla('dataTable');
-    if (tipo != "") {
-        let datos = {tipo};
+    if ($('#tipoTema').val() != "") {
+        let datos = {tipo: $('#tipoTema').val()};
         _RQ('GET','/back/temas_por_tipo', datos, function(result) {$('#loading').hide();
-            console.log(result);
-            /*datosTabla = result;
-            LlenaTabla(result);*/
-
-
-
-            if (tipo==1) {
-                datosTabla = [
-                    {id:1, nombre:"TEMA DE PRUEBA 1", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:2, nombre:"TEMA DE PRUEBA 2", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:3, nombre:"TEMA DE PRUEBA 3", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:4, nombre:"TEMA DE PRUEBA 4", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:5, nombre:"TEMA DE PRUEBA 5", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:6, nombre:"TEMA DE PRUEBA 6", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:7, nombre:"TEMA DE PRUEBA 7", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                    {id:8, nombre:"TEMA DE PRUEBA 8", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:null},
-                ];
-            } else {
-                datosTabla = [
-                    {id:9, nombre:"TEMA DE PRUEBA 9", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 1"},
-                    {id:10, nombre:"TEMA DE PRUEBA 10", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 2"},
-                    {id:11, nombre:"TEMA DE PRUEBA 11", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 3"},
-                    {id:12, nombre:"TEMA DE PRUEBA 12", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 4"},
-                    {id:13, nombre:"TEMA DE PRUEBA 13", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 5"},
-                    {id:14, nombre:"TEMA DE PRUEBA 14", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 6"},
-                    {id:15, nombre:"TEMA DE PRUEBA 15", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 7"},
-                    {id:16, nombre:"TEMA DE PRUEBA 16", activo:1, id_acta:1, nombre_acta:"ACTA INICIAL DE TEMAS", id_padre:"TEMA DE PRUEBA 8"},
-                ];
-            }
-
-
+            datosTabla = result.datos;
+            LlenaTabla(result.datos);
         });
     }
 }
 
 function LlenaTabla(datos) {
     let filas = [];
-    let padre = false;
     let columns = [
         {title: "Nombre"},
         {title: "Acta"},
         {title: "Estado"},
         {title: "Acciones"}
     ];
-    let largo = 3;
-    if(datos[0].id_padre != null){
-        padre = true;
+    let targets = [2,3];
+    if($('#tipoTema').val() == 2){
         columns = [
             {title: "Nombre"},
             {title: "Acta"},
@@ -67,21 +37,32 @@ function LlenaTabla(datos) {
             {title: "Estado"},
             {title: "Acciones"}
         ];
-        largo = 4;
+        targets = [3,4];
     }
     datos.forEach(element => {
         let columna = [];
-        //columna.push(element.nombre);
-        columna.push(plantillaHTML.itemInputText(element, 2));
-        let htmlActa = `<a href="/files/BLANCO.pdf" target="_blank" class="dataFila${element.id}">${element.nombre_acta}</a>`;
+        columna.push(plantillaHTML.itemInputText({
+            id: element.id,
+            xid: "Nombre"+element.id,
+            valor: element.nombre,
+            filtro: "itemLista",
+            max: 250
+        }));
         let selectActa = $('#plantillaSelectActa').html();
-        htmlActa += selectActa.replaceAll('@valor', '').replaceAll('@id', element.id);
-        columna.push(htmlActa);
-        if(padre){
-            columna.push(element.id_padre);
+        columna.push(selectActa.replaceAll('@valor', element.acta).replaceAll('@id', element.id));
+        if($('#tipoTema').val() == 2){
+            let selectActa = $('#plantillaSelectTemasP').html();
+            columna.push(selectActa.replaceAll('@valor', element.padre).replaceAll('@id', element.id));
         }
-        columna.push(plantillaHTML.itemEstadoTabla(element, "tema"));
-        columna.push(plantillaHTML.itemAccionesTabla(element));
+        columna.push(plantillaHTML.itemEstadoTabla({
+            activo: element.activo,
+            id: element.id
+        }));
+        columna.push(plantillaHTML.itemAccionesTabla({
+            id: element.id,
+            editar: true,
+            guardar: true
+        }));
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -90,7 +71,8 @@ function LlenaTabla(datos) {
         columns: columns,
         data: filas,
         columnDefs: [
-            {targets: [largo-1,largo], className: "align-middle text-center", width: "70px"}
+            {targets: targets, className: "align-middle text-center", width: "70px"},
+            {targets: '_all', className: "align-middle"}
         ],
         language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
     });
@@ -108,7 +90,8 @@ function LimpiarTabla(idTabla) {
 $('#dataTable').on('draw.dt', function () {
     $('[data-toggle="tooltip"]').tooltip();
     datosTabla.forEach(element => {
-        $('#tipoValor'+element.id).val(element.tipo_valor);
+        $('#selectActa'+element.id).val(element.id_acta);
+        $('#selectTemasP'+element.id).val(element.id_padre);
         $('.inputFila'+element.id).hide();
     });
     $('#btnNuevo').show();
@@ -123,9 +106,13 @@ function ConfirmarActivar(id, activar){
 }
 
 function Activar(id, activar){
-    Ocultar('confirmacionModal');
-    _MSJ("success", "¡Registrado!", function() {
-        //location.reload();
+    $('#confirmacionBtn').prop('disabled', true);
+    let datos = {id,activar};
+    _RQ('POST','/back/activar_tema', datos, function(result) {
+        Ocultar('confirmacionModal');
+        _MSJ(result.tipo, result.txt, function() {
+            ConsultarTemas();
+        });
     });
 }
 
@@ -133,20 +120,32 @@ function Nuevo(){
     DisableI('btnNuevo', true);
     let element = {
         id: 0,
-        nombre: null,
-        id_acta: null,
+        nivel: null,
+        nombre: "",
+        id_acta: "",
         id_padre: null,
-        activo: 1
+        acta: "",
+        padre: ""
     };
     let columna = [];
-    columna.push(plantillaHTML.itemInputText(element, 2));
+    columna.push(plantillaHTML.itemInputText({
+        id: element.id,
+        xid: "Nombre"+element.id,
+        valor: element.nombre,
+        filtro: "itemLista",
+        max: 250
+    }));
     let selectActa = $('#plantillaSelectActa').html();
-    columna.push(selectActa.replaceAll('@valor', '').replaceAll('@id', element.id));
-    if($('#tipoTema').val()==2){
-        columna.push(element.id_padre);
+    columna.push(selectActa.replaceAll('@valor', element.acta).replaceAll('@id', element.id));
+    if($('#tipoTema').val() == 2){
+        let selectActa = $('#plantillaSelectTemasP').html();
+        columna.push(selectActa.replaceAll('@valor', element.padre).replaceAll('@id', element.id));
     }
-    columna.push('');
-    columna.push(plantillaHTML.itemAccionesTabla(element));
+    columna.push("");
+    columna.push(plantillaHTML.itemAccionesTabla({
+        id: element.id,
+        guardar: true
+    }));
     dataTable.row.add(columna).draw(false);
     dataTable.order([1, 'asc']).draw();
     dataTable.order([0, 'asc']).draw();
@@ -162,52 +161,70 @@ function CambioSelectActa(id){
 
 function ConfirmarGuardar(id){
     let valido = true;
-    let requeridos = ['textT1Id'+id, 'selectActa'+id];
+    let requeridos = ['inputTextNombre'+id, 'selectActa'+id];
     requeridos.forEach(item => {
         if (!ValidarCampo(item)) {
             valido = false;
         }
     });
     if (valido) {
-        $('#confirmacionMsj').html('¿Seguro desea guardar el tema '+$("#tipoTema option:selected").text()+'?');
-        $('#confirmacionBtn').attr("onclick","GuardarTema("+id+");");
+        let txtMensaje = '¿Seguro desea guardar el nuevo tema?';
+        if (id != 0) {
+            txtMensaje = '¿Seguro desea guardar los cambios realizados?';
+        }
+        $('#confirmacionMsj').html(txtMensaje);
+        $('#confirmacionBtn').attr("onclick","Guardar("+id+");");
         Mostrar('confirmacionModal');
     }
 }
 
-function GuardarTema(id){
-    $('#loading').show();
-    _MSJ("success", "¡Registrado!", function() {
-        location.reload();
-    });
-    /*let datos = {
+function Guardar(id){
+    Ocultar('confirmacionModal');
+    let datos = {
         id,
-        nombre: $('#textT1Id'+id).val(),
-        acta: $('#selectActa'+id).val()
+        nivel: $('#tipoTema').val(),
+        nombre: $('#inputTextNombre'+id).val(),
+        id_acta: $('#selectActa'+id).val()
     };
-    _RQ('POST','/back/guardar_frima', datos, function(result) {$('#loading').hide();
-        _MSJ(result.tipo, result.txt, function() {
-            location.reload();
+    if ($('#tipoTema').val() == 2) {
+        datos = {
+            id,
+            nivel: $('#tipoTema').val(),
+            nombre: $('#inputTextNombre'+id).val(),
+            id_acta: $('#selectActa'+id).val(),
+            id_padre: $('#selectTemasP'+id).val()
+        };
+    }
+    _RQ('POST','/back/crear_actualizar_tema', datos, function(result) {
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+            ConsultarTemas();
         });
-    }, true);*/
+    });
 }
 
 function Editar(id){
     if ($('.dataFila'+id).is(":visible")) {
         $('.dataFila'+id).hide();
         $('.inputFila'+id).show();
-        $('#selectActa'+id).val(id);
     } else {
         $('.inputFila'+id).hide();
         $('.dataFila'+id).show();
     }
 }
 
-function CargaMasiva(){
+function ConfirmarCargaMasiva(){
     if (ValidarCampo('inputCargaMasiva')) {
-        $('#loading').show();
-        _MSJ("success", "¡Registrado!", function() {
+        $('#confirmacionMsj').html('¿Seguro desea realizar la carga masiva de temas?');
+        $('#confirmacionBtn').attr("onclick","CargaMasiva();");
+        Mostrar('confirmacionModal');
+    }
+}
+
+function CargaMasiva(){
+    let datos = new FormData(document.getElementById('formCargaMasiva'));
+    _RQ('POST','/back/carga_masiva_temas', datos, function(result) {
+        _MSJ(result.tipo, result.txt, function() {
             location.reload();
         });
-    }
+    }, true);
 }

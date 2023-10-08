@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('prueba', [BackendController::class, 'prueba'])->name('prueba');
 
 Route::get('/login', function () {
     return view('fake_login');
@@ -25,6 +24,7 @@ Route::get('sinregistro', function () {
 Route::get('/logout', [FrontendController::class, 'Logout'])->name('logout');
 Route::post('login', [BackendController::class, 'Login'])->name('login');
 Route::middleware('vee')->group(function () {
+    Route::get('prueba', [BackendController::class, 'prueba'])->name('prueba');
     /* ====================================================== FRONTEND ====================================================== */
     Route::get('/', [FrontendController::class, 'Inicio'])->name('inicio');
     Route::get('notificaciones', [FrontendController::class, 'Notificaciones'])->name('notificaciones');
@@ -37,6 +37,7 @@ Route::middleware('vee')->group(function () {
     Route::get('planest/listar', [FrontendController::class, 'ListarPlanesTrabajo'])->name('listar_planest');
 
     /* ====================================================== BACKEND ====================================================== */
+    Route::get('back/descargar_archivo', [BackendController::class, 'DescargarArchivo']);
     /* ******************* Base ******************* */
     Route::post('back/trabajo', [BackendController::class, 'VariablesTrabajo']);
     Route::get('back/notificaciones', [BackendController::class, 'Notificaciones']);
@@ -54,7 +55,15 @@ Route::middleware('vee')->group(function () {
     Route::get('back/datos_config_lista', [BackendController::class, 'DatosConfigLista']);
     Route::post('back/crear_actualizar_item_lista', [BackendController::class, 'CrearActualizarItemLista']);
     Route::post('back/activar_item', [BackendController::class, 'ActivarItemLista']);
+    /* ******************* Temas Actas ******************* */
+    Route::get('back/actas_tp', [BackendController::class, 'ActasTP']);
+    Route::post('back/guardar_actatp', [BackendController::class, 'GuardarActasTP']);
+    Route::post('back/activar_acta', [BackendController::class, 'ActivarActa']);
+    Route::post('back/reemplazar_acta', [BackendController::class, 'ReemplazarActa']);
     /* ******************* Temas principales ******************* */
     Route::get('back/temas_por_tipo', [BackendController::class, 'TemasPorTipo']);
+    Route::post('back/crear_actualizar_tema', [BackendController::class, 'CrearActualizarTema']);
+    Route::post('back/activar_tema', [BackendController::class, 'ActivarTema']);
+    Route::post('back/carga_masiva_temas', [BackendController::class, 'CargaMasivaTemas']);
 
 });

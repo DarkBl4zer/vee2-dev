@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 date_default_timezone_set('America/Bogota');
 
+use App\Models\ActasModel;
 use App\Models\FirmasModel;
 use App\Models\ListasModel;
 use App\Models\PerfilesModel;
 use App\Models\RolesModel;
 use App\Models\RolSubMenuModel;
+use App\Models\TemasPModel;
 use App\Models\UsuarioNotificacionModel;
 use App\Models\UsuariosModel;
 use Carbon\Carbon;
@@ -20,12 +22,9 @@ use Illuminate\Support\Facades\Storage;
 
 class BackendController extends Controller
 {
-    public function prueba(){
-        $sesion = Session::get('UsuarioVee');
-        $lista = ListasModel::where('id', 4)->first();
-        $tipoValor = array(0, $lista->id, $lista->valor_numero, $lista->valor_texto);
-        $valor = $tipoValor[$lista->tipo_valor];
-        return $valor;
+    public function prueba(Request $request){
+        $sesion = (object)$request->sesion;
+        return $sesion;
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
@@ -44,7 +43,9 @@ class BackendController extends Controller
                     "d_sinproc" => $request->delegada,
                     "perfiles" => $usuario->perfiles,
                     "trabajo" => (object)array(
-                        "id_perfil" => $usuario->perfiles[0]->id
+                        "id_perfil" => $usuario->perfiles[0]->id,
+                        "id_rol" => $usuario->perfiles[0]->id_rol,
+                        "id_delegada" => $usuario->perfiles[0]->id_delegada,
                     ),
                     "menu" => $this->MenusPorRol($usuario->perfiles[0]->rol->id)
                 );
@@ -60,9 +61,11 @@ class BackendController extends Controller
     public function VariablesTrabajo(Request $request){
         try {
             $sesion = (object)Session::get('UsuarioVee');
+            $perfil = PerfilesModel::where('id',$request->id)->first();
             $sesion->trabajo->id_perfil = $request->id;
-            $id_rol = PerfilesModel::where('id', $request->id)->first()->id_rol;
-            $sesion->menu = $this->MenusPorRol($id_rol);
+            $sesion->trabajo->id_rol = $perfil->id_rol;
+            $sesion->trabajo->id_delegada = $perfil->id_delegada;
+            $sesion->menu = $this->MenusPorRol($perfil->id_rol);
             Session::put('UsuarioVee', $sesion);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
@@ -165,8 +168,8 @@ class BackendController extends Controller
                     'tipo_coord' => $request->tipo,
                     'usuario_crea' => $sesion->cedula
                 );
-                PerfilesModel::create($new);
-                $this->Auditoria($sesion->id, "INSERT", "PerfilesModel", null, $new);
+                $idModelo = PerfilesModel::create($new)->id;
+                $this->Auditoria($sesion->id, "INSERT", "PerfilesModel", $idModelo, null, $new);
                 return $this->MsjRespuesta(true);
             }
         } catch (Exception $ex) {
@@ -180,7 +183,7 @@ class BackendController extends Controller
             $old = PerfilesModel::where('id', $request->id)->first();
             $new = array('activo' => false);
             PerfilesModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "DELETE", "PerfilesModel", $old, $new);
+            $this->Auditoria($sesion->id, "DELETE", "PerfilesModel", $request->id, $old, $new);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getMessage());
@@ -193,7 +196,7 @@ class BackendController extends Controller
             $old = UsuariosModel::where('id', $request->id)->first();
             $new = array('activo' => $request->activar);
             UsuariosModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "UPDATE", "UsuariosModel", $old, $new);
+            $this->Auditoria($sesion->id, "UPDATE", "UsuariosModel", $request->id, $old, $new);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getMessage());
@@ -260,13 +263,13 @@ class BackendController extends Controller
                         'cnv_firma' => 'cnv_'.$date.'.'.$extension,
                         'escala' => $request->escalaFirma
                     );
-                    FirmasModel::create($firma);
-                    $this->Auditoria($sesion->id, "INSERT", "FirmasModel", null, $firma);
+                    $idModelo = FirmasModel::create($firma)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "FirmasModel", $idModelo, null, $firma);
                 } else{
                     $old = $firmas[0];
                     $new = array('cnv_firma' => 'cnv_'.$date.'.'.$extension, 'escala' => $request->escalaFirma);
                     FirmasModel::where('id', $firmas[0]->id)->update($new);
-                    $this->Auditoria($sesion->id, "UPDATE", "FirmasModel", $old, $new);
+                    $this->Auditoria($sesion->id, "UPDATE", "FirmasModel", $firmas[0]->id, $old, $new);
                 }
                 DB::commit();
                 return $this->MsjRespuesta(true);
@@ -294,22 +297,30 @@ class BackendController extends Controller
         try {
             $sesion = (object)$request->sesion;
             $new = array();
-            ($request->prefijo!=null)?$new["prefijo"]=$request->prefijo:null;
             ($request->nombre!=null)?$new["nombre"]=$request->nombre:null;
-            ($request->sufijo!=null)?$new["sufijo"]=$request->sufijo:null;
             ($request->valor_texto!=null)?$new["valor_texto"]=$request->valor_texto:null;
             ($request->valor_numero!=null)?$new["valor_numero"]=$request->valor_numero:null;
             ($request->tipo_valor!=null)?$new["tipo_valor"]=$request->tipo_valor:null;
-            ($request->formato!=null)?$new["formato"]=$request->formato:null;
-            ($request->id_padre!=null)?$new["id_padre"]=$request->id_padre:null;
             if ($request->id != 0) {
                 $old = ListasModel::where('id', $request->id)->first();
                 ListasModel::where('id', $request->id)->update($new);
-                $this->Auditoria($sesion->id, "UPDATE", "ListasModel", $old, $new);
+                $this->Auditoria($sesion->id, "UPDATE", "ListasModel", $request->id, $old, $new);
             } else{
-                $new["tipo"] = $request->tipo;
-                $insert = ListasModel::create($new);
-                $this->Auditoria($sesion->id, "INSERT", "ListasModel", null, $insert);
+                $cont = 0;
+                if ($request->tipo_valor == 2) {
+                    $cont = ListasModel::where('tipo', $request->tipo)->where('valor_numero', $request->valor_numero)->count();
+                }
+                if ($request->tipo_valor == 3) {
+                    $cont = ListasModel::where('tipo', $request->tipo)->where('valor_texto', $request->valor_texto)->count();
+                }
+                if ($cont == 0) {
+                    $new["tipo"] = $request->tipo;
+                    $idModelo = ListasModel::create($new)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "ListasModel", $idModelo, null, $new);
+                } else{
+                    DB::rollBack();
+                    return $this->MsjRespuesta(false, "El valor para este item ya se encuentra registrado.", 200);
+                }
             }
             DB::commit();
             return $this->MsjRespuesta(true);
@@ -326,7 +337,7 @@ class BackendController extends Controller
             $old = ListasModel::where('id', $request->id)->first();
             $new = array('activo' => $request->activar);
             ListasModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "UPDATE", "ListasModel", $old, $new);
+            $this->Auditoria($sesion->id, "UPDATE", "ListasModel", $request->id, $old, $new);
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
@@ -335,13 +346,176 @@ class BackendController extends Controller
         }
     }
 
-    public function TemasPorTipo(Request $request){
+    /* ====================================================== ACTAS PRINCIPALES ====================================================== */
+
+    public function ActasTP(Request $request){
         try {
-            $datos = ListasModel::where('tipo', $request->tipo)->get();
+            $sesion = (object)$request->sesion;
+            if($sesion->trabajo->id_rol < 3){
+                $datos = ActasModel::where('tipo_acta', 1)->get();
+            } else{
+                $datos = ActasModel::where('tipo_acta', 1)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+            }
             return response()->json($datos);
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getMessage());
         }
     }
+
+    public function GuardarActasTP(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            if (isset($request->nombreActa)) {
+                $date = Carbon::now()->format('YmdHisu');
+                if (isset($request->inputActa)) {
+                    $request->file('inputActa')->storeAs('vee2_cargados', 'actatp_'.$date.'.'.$request->file('inputActa')->extension());
+                    $acta = array(
+                        'id_delegada' => $sesion->trabajo->id_delegada,
+                        'tipo_acta' => 1,
+                        'descripcion' => $request->nombreActa,
+                        'archivo' => 'actatp_'.$date.'.'.$request->file('inputActa')->extension(),
+                        'nombre_archivo' => $request->file('inputActa')->getClientOriginalName()
+                    );
+                    $idModelo = ActasModel::create($acta)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "ActasModel", $idModelo, null, $acta);
+                }
+                DB::commit();
+                return $this->MsjRespuesta(true);
+            } else{
+                return $this->MsjRespuesta(false, "Archivo no recibido.");
+            }
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function DescargarArchivo(Request $request){
+        if (Storage::exists($request->carpeta.'/'.$request->archivo)) {
+            return Storage::download($request->carpeta.'/'.$request->archivo);
+        } else{
+            return $this->MsjRespuesta(false, "Archivo no existe.", 404);
+        }
+    }
+
+    public function ActivarActa(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $old = ActasModel::where('id', $request->id)->first();
+            $new = array('activo' => $request->activar);
+            ActasModel::where('id', $request->id)->update($new);
+            $this->Auditoria($sesion->id, "UPDATE", "ActasModel", $request->id, $old, $new);
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function ReemplazarActa(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            //TODO Reemplazar el número de acta en cada uno de los temas principales.
+            //DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    /* ====================================================== TEMAS PRINCIPALES ====================================================== */
+    public function TemasPorTipo(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            if($sesion->trabajo->id_rol < 3){
+                $datos = TemasPModel::where('nivel', $request->tipo)->where('eliminado', false)->get();
+            } else{
+                $datos = TemasPModel::where('nivel', $request->tipo)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+            }
+            if ($request->tipo == 2) {
+                $temasp = TemasPModel::where('nivel', 1)->where('eliminado', false)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+            }else{
+                $temasp = [];
+            }
+            return response()->json(array('datos' => $datos, 'temasp' => $temasp));
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function CrearActualizarTema(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $new = array();
+            ($request->nombre!=null)?$new["nombre"]=$request->nombre:null;
+            ($request->id_acta!=null)?$new["id_acta"]=$request->id_acta:null;
+            ($request->id_padre!=null)?$new["id_padre"]=$request->id_padre:null;
+            if ($request->id != 0) {
+                $old = TemasPModel::where('id', $request->id)->first();
+                TemasPModel::where('id', $request->id)->update($new);
+                $this->Auditoria($sesion->id, "UPDATE", "TemasPModel", $request->id, $old, $new);
+            } else{
+                $new["id_delegada"]=$sesion->trabajo->id_delegada;
+                $new["nivel"]=$request->nivel;
+                $idModelo = TemasPModel::create($new)->id;
+                $this->Auditoria($sesion->id, "INSERT", "TemasPModel", $idModelo, null, $new);
+            }
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function ActivarTema(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $old = TemasPModel::where('id', $request->id)->first();
+            $new = array('activo' => $request->activar);
+            TemasPModel::where('id', $request->id)->update($new);
+            $this->Auditoria($sesion->id, "UPDATE", "TemasPModel", $request->id, $old, $new);
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function CargaMasivaTemas(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            if (isset($request->nombreActa)) {
+                $date = Carbon::now()->format('YmdHisu');
+                if (isset($request->inputActa)) {
+                    $request->file('inputActa')->storeAs('vee2_cargados', 'actatp_'.$date.'.'.$request->file('inputActa')->extension());
+                    $acta = array(
+                        'id_delegada' => $sesion->trabajo->id_delegada,
+                        'tipo_acta' => 1,
+                        'descripcion' => $request->nombreActa,
+                        'archivo' => 'actatp_'.$date.'.'.$request->file('inputActa')->extension(),
+                        'nombre_archivo' => $request->file('inputActa')->getClientOriginalName()
+                    );
+                    $idModelo = ActasModel::create($acta)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "ActasModel", $idModelo, null, $acta);
+                }
+                DB::commit();
+                return $this->MsjRespuesta(true);
+            } else{
+                return $this->MsjRespuesta(false, "Archivo no recibido.");
+            }
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
 
 }
