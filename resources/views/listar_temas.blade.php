@@ -24,7 +24,7 @@ Listar Temas
             <div class="col-4">
                 <h6 class="m-0 font-weight-bold text-primary">Listar temas</h6>
                 <div class="form-group" style="margin-top: 20px;">
-                    <label for="tipoTema">Tipo de tema <sup style="color: var(--green)">*</sup></label>
+                    <label for="tipoTema">Tipo de tema <sup style="color: var(--danger)">*</sup></label>
                     <select class="form-control select2" id="tipoTema" name="tipoTema" onchange="ConsultarTemas();" style="font-size: 14px;">
                         <option value="">...</option>
                         <option value="1">PRINCIPALES</option>
@@ -33,6 +33,7 @@ Listar Temas
                 </div>
             </div>
             <div class="col-3 offset-md-4" style="padding-top: 27px;">
+                @if ($permiteNueva)
                 <a href="/files/PLANTILLA_CARGA.xlsx" target="_blank">
                     <i class="fas fa-file-excel" style="font-size: 30px; color: var(--success);"></i> Plantilla carga masiva
                 </a>
@@ -41,13 +42,16 @@ Listar Temas
                     <div class="custom-file">
                         <form id="formCargaMasiva" method="post" enctype="multipart/form-data">
                             <input type="file" class="custom-file-input" id="inputCargaMasiva" name="inputCargaMasiva" aria-describedby="inputGroupCargaMasiva" accept=".xlsx" onchange="RemoveInvalid(this.id);">
-                            <label class="custom-file-label" for="inputCargaMasiva" style="border-radius: 5px; font-size: 14px;" data-browse="Elejir">Seleccionar archivo</label>
+                            <label class="custom-file-label" for="inputCargaMasiva" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Seleccionar archivo</label>
                         </form>
                     </div>
                 </div>
+                @endif
             </div>
             <div class="col-1">
+                @if ($permiteNueva)
                 <i class="fas fa-file-upload" style="font-size: 30px; margin-top: 72px; cursor:pointer;" onclick="ConfirmarCargaMasiva();"></i> <span style="cursor:pointer;" onclick="ConfirmarCargaMasiva();">Cargar</span>
+                @endif
             </div>
         </div>
     </div>

@@ -81,3 +81,28 @@ td .fas{
     background-color: transparent;
     cursor: pointer;
 }
+
+#dataTableEntidades td{
+    padding: 1px 1px 1px 4px !important;
+}
+
+.select2-selection{
+    border: solid #d1d3e2 1px !important;
+}
+
+label{
+    /*position: absolute;
+    top: -12px;
+    background-color: white;
+    left: 20px;*/
+    margin: 0px;
+    font-size: 14px;
+}
+
+input, select{
+    font-size: 13px !important;
+}
+
+.invalid-select2{
+    border: solid 1px #e74a3b !important;
+}

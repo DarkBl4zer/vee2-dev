@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 date_default_timezone_set('America/Bogota');
 
+use App\Models\AccionesModel;
 use App\Models\ActasModel;
 use App\Models\ConfiguracionesModel;
 use App\Models\DelegadasModel;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class FrontendController extends Controller
 {
@@ -135,8 +137,23 @@ class FrontendController extends Controller
 
     public function ListarAccionesPyC(Request $request){
         $sesion = (object)$request->sesion;
+        $permiteNueva = true;
+        if($sesion->trabajo->id_rol < 3){
+            $permiteNueva = false;
+            $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->groupBy('year')->orderBy('year', 'desc')->get();
+        } else{
+            $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->orderBy('year', 'desc')->get();
+        }
+        $acciones = ListasModel::where('tipo', 'actuacion_vee')->where('activo', true)->orderBy('id', 'asc')->get();
+        $terminadas = AccionesModel::where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', 16)->orderBy('id', 'desc')->take(100)->get();
+        $paraSeguimiento = "";
+        foreach ($terminadas as $item) {
+            $nombre = Str::limit($item->nombre, 50, ' (...)');
+            $paraSeguimiento .= '<option value="'.$item->id.'">'.$nombre.'</option>';
+        }
+        $temasp = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->get();
         $slag = 'accionesdepyc';
-        return view('listar_acciones', compact('sesion', 'slag'));
+        return view('listar_acciones', compact('sesion', 'slag', 'years', 'permiteNueva', 'acciones', 'paraSeguimiento', 'temasp'));
     }
 
     public function ListarPlanesTrabajo(Request $request){

@@ -109,7 +109,7 @@ function Ocultar(modal){
 }
 
 function ValidarCampo(id){
-    if ($('#'+id).val() == "") {
+    if ($('#'+id).val() == "" || $('#'+id).val() == null) {
         SetInvalid(id);
         return false;
     } else {
@@ -163,4 +163,22 @@ function FiltrarCaracteres(id, tipo){
 function DisableI(id, tipo, click=''){
     (tipo)?$('#'+id).css('cursor', 'not-allowed'):$('#'+id).css('cursor', 'pointer');
     $('#'+id).attr('onclick', click);
+}
+
+function SetCampoFecha(idx, min = false, max = false){
+    let calendario = new Object();
+    calendario.lang = 'es';
+    calendario.format = "d/m/Y";
+    calendario.timepickerScrollbar = false;
+    calendario.timepicker = false;
+    calendario.closeOnDateSelect = true;
+    if (min) {calendario.minDate = min;}
+    if (max) {calendario.maxDate = max;}
+    calendario.onGenerate = function( ct ){
+        jQuery(this).find('.xdsoft_date.xdsoft_weekend').addClass('xdsoft_disabled');
+    };
+	calendario.disabledDates = festivos;
+	calendario.formatDate ='d.m.Y';
+    jQuery.datetimepicker.setLocale('es');
+    $('#'+idx).datetimepicker(calendario);
 }

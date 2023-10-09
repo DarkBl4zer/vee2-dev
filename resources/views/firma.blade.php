@@ -42,7 +42,7 @@ Configurar Firma
                                 <input type="hidden" id="canvaFirma" name="canvaFirma">
                                 <input type="hidden" id="escalaFirma" name="escalaFirma">
                                 <input type="file" class="custom-file-input" id="inputFirma" name="inputFirma" aria-describedby="inputGroupFirma" accept=".jpg,.jpeg,.png">
-                                <label class="custom-file-label" for="inputFirma" style="border-radius: 5px;" data-browse="Elejir">Seleccionar archivo</label>
+                                <label class="custom-file-label" for="inputFirma" style="border-radius: 5px;" data-browse="Elegir">Seleccionar archivo</label>
                             </form>
                         </div>
                     </div>

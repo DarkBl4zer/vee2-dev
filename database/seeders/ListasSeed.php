@@ -1,7 +1,7 @@
 <?php
 
 namespace Database\Seeders;
-
+date_default_timezone_set('America/Bogota');
 use App\Models\ListasModel;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -31,7 +31,6 @@ class ListasSeed extends Seeder
             array('tipo' => 'actuacion_vee', 'tipo_valor' => 2, 'valor_numero' => 1, 'nombre' => 'INFORME DE PREVENCIÓN Y CONTROL A LA FUNCIÓN PÚBLICA'),
             array('tipo' => 'actuacion_vee', 'tipo_valor' => 2, 'valor_numero' => 2, 'nombre' => 'SEGUIMIENTO A UN INFORME DE PREVENCIÓN Y CONTROL A LA FUNCIÓN PÚBLICA'),
             array('tipo' => 'actuacion_vee', 'tipo_valor' => 2, 'valor_numero' => 3, 'nombre' => 'SEGUIMIENTOS DIFERENTES AL DE INFORMES DE PREVENCIÓN Y CONTROL A LA FUNCIÓN PÚBLICA'),
-            array('tipo' => 'actuacion_vee', 'tipo_valor' => 2, 'valor_numero' => 4, 'nombre' => 'SEGUIMIENTO A UN INFORME DE PREVENCIÓN Y CONTROL A LA FUNCIÓN PÚBLICA'),
             array('tipo' => 'actuacion_vee', 'tipo_valor' => 2, 'valor_numero' => 5, 'nombre' => 'REVISIONES CONTRACTUALES'),
 
             /* Profesiones */
@@ -123,6 +122,24 @@ class ListasSeed extends Seeder
             array('tipo' => 'tipo_acta', 'tipo_valor' => 2, 'valor_numero' => 2, 'nombre' => 'ACTA APROBACIÓN PLAN DE TRABAJO'),
             array('tipo' => 'tipo_acta', 'tipo_valor' => 2, 'valor_numero' => 3, 'nombre' => 'ACTA VIABILIDAD DELEGADO PLAN DE GESTIÓN'),
             array('tipo' => 'tipo_acta', 'tipo_valor' => 2, 'valor_numero' => 4, 'nombre' => 'ACTA MESA DE TRABAJO CON ENLACE'),
+
+            /* Estados */
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 1, 'nombre' => 'CREADA'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 2, 'nombre' => 'DECLARACION DELEGADO'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 3, 'nombre' => 'RECHAZADA'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 4, 'nombre' => 'ACTUALIZADA'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 5, 'nombre' => 'APROBADA'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 6, 'nombre' => 'EN PLAN DE TRABAJO'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 7, 'nombre' => 'RECHAZO PLAN DE TRABAJO'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 8, 'nombre' => 'APROBADO PLAN DE TRABAJO'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 9, 'nombre' => 'EQUIPO PLAN GESTION'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 10, 'nombre' => 'RECHAZO PLAN DE GESTION'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 11, 'nombre' => 'APROBADO PLAN DE GESTION'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 12, 'nombre' => 'INFORME ENTREGADO'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 13, 'nombre' => 'RECHAZO INFORME'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 14, 'nombre' => 'APROBADO INFORME'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 15, 'nombre' => 'ATUACION POSTERIOR'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 16, 'nombre' => 'ACCION CERRADA'),
         ];
         for ($i=0; $i < count($datos); $i++) {
             ListasModel::create($datos[$i]);

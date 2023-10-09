@@ -9,7 +9,6 @@ datosTabla = dataTable = null;
 function ConsultarTemas(){
     DisableI('btnNuevo', false, 'Nuevo();');
     $('#btnNuevo').hide();
-    ValidarCampo('lista');
     LimpiarTabla('dataTable');
     if ($('#tipoTema').val() != "") {
         let datos = {tipo: $('#tipoTema').val()};
@@ -23,7 +22,7 @@ function ConsultarTemas(){
 function LlenaTabla(datos) {
     let filas = [];
     let columns = [
-        {title: "Nombre"},
+        {title: "Tema principal"},
         {title: "Acta"},
         {title: "Estado"},
         {title: "Acciones"}
@@ -31,7 +30,7 @@ function LlenaTabla(datos) {
     let targets = [2,3];
     if($('#tipoTema').val() == 2){
         columns = [
-            {title: "Nombre"},
+            {title: "Tema secundario"},
             {title: "Acta"},
             {title: "Tema principal"},
             {title: "Estado"},

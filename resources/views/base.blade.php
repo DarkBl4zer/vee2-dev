@@ -132,6 +132,7 @@
         var baseTrabajo = {
             id_perfil: {{$sesion->trabajo->id_perfil}}
         };
+        var festivos = ['{!!implode("', '",$sesion->festivos)!!}'];
         $('#li_{{$slag}}').addClass('active');
         $('#li_{{$slag}}').find('.nav-link').removeClass('collapsed');
         $('#colps{{$slag}}').addClass('show');

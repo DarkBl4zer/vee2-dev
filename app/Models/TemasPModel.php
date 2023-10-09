@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TemasPModel extends Model
 {
@@ -31,5 +32,9 @@ class TemasPModel extends Model
 
     public function getActaAttribute(): String{
         return ActasModel::where('id', $this->id_acta)->first()->descripcion;
+    }
+
+    public function modelActa() : HasOne {
+        return $this->hasOne(ActasModel::class, 'id', 'id_acta');
     }
 }

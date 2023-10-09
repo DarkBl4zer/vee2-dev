@@ -71,7 +71,7 @@ class PlantillaHTML{
         return `<a href="#" onclick="ClickLink${data.xid}(${data.id});">${data.texto}</a>`;
     }
 
-    temasP(data){
+    options(data){
         let html = `<option value="">...</option>`;
         data.forEach(element => {
             html += `<option value="${element.id}">${element.nombre}</option>`;

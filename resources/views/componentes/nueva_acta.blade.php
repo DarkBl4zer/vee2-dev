@@ -22,7 +22,7 @@
                         <div class="input-group">
                             <div class="custom-file">
                                 <input type="file" class="custom-file-input" id="inputActa" name="inputActa" aria-describedby="inputGroupActa" accept=".pdf">
-                                <label class="custom-file-label" for="inputActa" style="border-radius: 5px; font-size: 14px;" data-browse="Elejir">Seleccionar archivo</label>
+                                <label class="custom-file-label" for="inputActa" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Seleccionar archivo</label>
                             </div>
                         </div>
                     </div>

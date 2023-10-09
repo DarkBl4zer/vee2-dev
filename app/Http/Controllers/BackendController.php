@@ -3,7 +3,13 @@
 namespace App\Http\Controllers;
 date_default_timezone_set('America/Bogota');
 
+use App\Imports\TemasImport;
+use App\Models\AccionEntidadModel;
+use App\Models\AccionesModel;
 use App\Models\ActasModel;
+use App\Models\DelegadaEntidadModel;
+use App\Models\DelegadasModel;
+use App\Models\FestivosModel;
 use App\Models\FirmasModel;
 use App\Models\ListasModel;
 use App\Models\PerfilesModel;
@@ -19,12 +25,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        return $sesion;
+        $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->get();
+        return $years;
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
@@ -35,6 +44,11 @@ class BackendController extends Controller
             if (!(array)$usuario) {
                 return Redirect::to(route('sinregistro'));
             } else {
+                $festivos = FestivosModel::get();
+                $fechas = array();
+                foreach ($festivos as $festivo) {
+                    array_push($fechas, Carbon::createFromFormat('Y-m-d H:i:s', $festivo->fecha) ->format('d.m.Y'));
+                }
                 $sesion = array(
                     "id" => $usuario->id,
                     "cedula" => $usuario->cedula,
@@ -42,6 +56,7 @@ class BackendController extends Controller
                     "nombre" => $usuario->nombre,
                     "d_sinproc" => $request->delegada,
                     "perfiles" => $usuario->perfiles,
+                    "festivos" => $fechas,
                     "trabajo" => (object)array(
                         "id_perfil" => $usuario->perfiles[0]->id,
                         "id_rol" => $usuario->perfiles[0]->id_rol,
@@ -491,31 +506,112 @@ class BackendController extends Controller
     }
 
     public function CargaMasivaTemas(Request $request){
+        try {
+            DB::beginTransaction();
+            $sesion = (object)$request->sesion;
+            TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('eliminado', false)->update(['activo' =>false, 'eliminado'=>true]);
+            $date = Carbon::now()->format('YmdHisu');
+            $ext = $request->file('inputCargaMasiva')->extension();
+            $request->file('inputCargaMasiva')->storeAs('vee2_temp', 'temas_'.$date.'.'.$ext);
+            Excel::import(new TemasImport($sesion->trabajo->id_delegada), storage_path().'/app/vee2_temp/temas_'.$date.'.'.$ext, null, \Maatwebsite\Excel\Excel::XLSX);
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            $failures = $e->failures();
+            /*foreach ($failures as $failure) {
+                $failure->row(); // row that went wrong
+                $failure->attribute(); // either heading key (if using heading row concern) or column index
+                $failure->errors(); // Actual error messages from Laravel validator
+                $failure->values(); // The values of the row that has failed.
+            }*/
+            return $this->MsjRespuesta(false, $failures);
+        }
+    }
+
+    /* ====================================================== ACCIONES ====================================================== */
+    public function AccionesPorPeriodo(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+            return response()->json($datos);
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function TemasPorTemap(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $temas = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 2)->where('id_padre', $request->temap)->get();
+            if (count($temas) == 0) {
+                $acta = TemasPModel::where('id', $request->temap)->first()->modelActa->archivo;
+            } else{
+                $acta = $temas->first()->modelActa->archivo;
+            }
+            return response()->json(array('temas' => $temas, 'acta' => $acta));
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function EntidadesPorDelegada(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $delegadaEntidad = DelegadaEntidadModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('activo', true)->get();
+            $entidades = array();
+            foreach ($delegadaEntidad as $item) {
+                if(!is_null($item->entidad)){
+                    array_push($entidades, $item->entidad);
+                }
+            }
+            $key_values = array_column($entidades, 'nombre');
+            array_multisort($key_values, SORT_ASC, $entidades);
+            return response()->json($entidades);
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function CrearActualizarAccion(Request $request){
         DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
-            if (isset($request->nombreActa)) {
-                $date = Carbon::now()->format('YmdHisu');
-                if (isset($request->inputActa)) {
-                    $request->file('inputActa')->storeAs('vee2_cargados', 'actatp_'.$date.'.'.$request->file('inputActa')->extension());
-                    $acta = array(
-                        'id_delegada' => $sesion->trabajo->id_delegada,
-                        'tipo_acta' => 1,
-                        'descripcion' => $request->nombreActa,
-                        'archivo' => 'actatp_'.$date.'.'.$request->file('inputActa')->extension(),
-                        'nombre_archivo' => $request->file('inputActa')->getClientOriginalName()
-                    );
-                    $idModelo = ActasModel::create($acta)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "ActasModel", $idModelo, null, $acta);
-                }
-                DB::commit();
-                return $this->MsjRespuesta(true);
+            $new = array();
+            $new["id_delegada"]=$sesion->trabajo->id_delegada;
+            $new["id_actuacion"]=$request->id_actuacion;
+            $new["id_temap"]=$request->id_temap;
+            $new["id_temas"]=$request->id_temas;
+            $new["titulo"]=$request->titulo;
+            $new["objetivo_general"]=$request->objetivo_general;
+            $new["fecha_plangestion"]=Carbon::createFromFormat('d/m/Y', $request->fecha_plangestion)->format('Y-m-d');
+            $new["numero_profesionales"]=$request->numero_profesionales;
+            $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');;
+            $new["fecha_final"]=Carbon::createFromFormat('d/m/Y', $request->fecha_final)->format('Y-m-d');;
+            $new["year"]=date("Y");
+            $new["id_padre"]=$request->id_padre;
+            if ($request->id != 0) {
+                $old = AccionesModel::where('id', $request->id)->first();
+                AccionesModel::where('id', $request->id)->update($new);
+                $this->Auditoria($sesion->id, "UPDATE", "AccionesModel", $request->id, $old, $new);
             } else{
-                return $this->MsjRespuesta(false, "Archivo no recibido.");
+                $idModelo = AccionesModel::create($new)->id;
+                $this->Auditoria($sesion->id, "INSERT", "AccionesModel", $idModelo, null, $new);
+                foreach ($request->entidades as $item) {
+                    $new2 = [
+                        'id_accion' => $idModelo,
+                        'id_entidad' => $item,
+                    ];
+                    $idAcEnt = AccionEntidadModel::create($new2)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
+                }
             }
+            DB::commit();
+            return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
             return $this->MsjRespuesta(false, $ex->getMessage());
         }
+    }
 
 }

@@ -65,5 +65,9 @@ Route::middleware('vee')->group(function () {
     Route::post('back/crear_actualizar_tema', [BackendController::class, 'CrearActualizarTema']);
     Route::post('back/activar_tema', [BackendController::class, 'ActivarTema']);
     Route::post('back/carga_masiva_temas', [BackendController::class, 'CargaMasivaTemas']);
-
+    /* ******************* Acciones ******************* */
+    Route::get('back/acciones_por_periodo', [BackendController::class, 'AccionesPorPeriodo']);
+    Route::get('back/temas_por_temap', [BackendController::class, 'TemasPorTemap']);
+    Route::get('back/entidades_por_delegada', [BackendController::class, 'EntidadesPorDelegada']);
+    Route::post('back/crear_actualizar_accion', [BackendController::class, 'CrearActualizarAccion']);
 });
