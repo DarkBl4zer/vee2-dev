@@ -645,4 +645,55 @@ class BackendController extends Controller
         }
     }
 
+    public function CrearActualizarAccion(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $new = array();
+            $new["id_actuacion"]=$request->id_actuacion;
+            $new["id_temap"]=$request->id_temap;
+            $new["id_temas"]=$request->id_temas;
+            $new["titulo"]=$request->titulo;
+            $new["objetivo_general"]=$request->objetivo_general;
+            $new["fecha_plangestion"]=Carbon::createFromFormat('d/m/Y', $request->fecha_plangestion)->format('Y-m-d');
+            $new["numero_profesionales"]=$request->numero_profesionales;
+            $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');;
+            $new["fecha_final"]=Carbon::createFromFormat('d/m/Y', $request->fecha_final)->format('Y-m-d');;
+            $new["id_padre"]=$request->id_padre;
+            if ($request->id != 0) {
+                $old = AccionesModel::where('id', $request->id)->first();
+                AccionesModel::where('id', $request->id)->update($new);
+                $this->Auditoria($sesion->id, "UPDATE", "AccionesModel", $request->id, $old, $new);
+                AccionEntidadModel::where('id_accion', $request->id)->update(['activo' => false]);
+                $this->Auditoria($sesion->id, "UPDATE", "AccionEntidadModel", $request->id, 'activo:true ALL', 'activo:false ALL');
+                foreach ($request->entidades as $item) {
+                    $new2 = [
+                        'id_accion' => $request->id,
+                        'id_entidad' => $item,
+                    ];
+                    $idAcEnt = AccionEntidadModel::create($new2)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
+                }
+            } else{
+                $new["id_delegada"]=$sesion->trabajo->id_delegada;
+                $new["year"]=date("Y");
+                $idModelo = AccionesModel::create($new)->id;
+                $this->Auditoria($sesion->id, "INSERT", "AccionesModel", $idModelo, null, $new);
+                foreach ($request->entidades as $item) {
+                    $new2 = [
+                        'id_accion' => $idModelo,
+                        'id_entidad' => $item,
+                    ];
+                    $idAcEnt = AccionEntidadModel::create($new2)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
+                }
+            }
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
 }

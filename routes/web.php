@@ -71,5 +71,6 @@ Route::middleware('vee')->group(function () {
     Route::get('back/entidades_por_delegada', [BackendController::class, 'EntidadesPorDelegada']);
     Route::post('back/crear_actualizar_accion', [BackendController::class, 'CrearActualizarAccion']);
     Route::get('back/accion_por_id', [BackendController::class, 'AccionPorId']);
+    Route::post('back/previa_imparcialidad', [BackendController::class, 'VistaPreviaImparcialidad']);
 
 });

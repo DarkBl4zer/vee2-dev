@@ -61,7 +61,7 @@
                 </div>
                 <div class="row" style="font-size: 14px;">
                     <div class="col-12">
-                        <p style="text-align: justify;">De conformidad con el principio de imparcialidad señalado en el numeral 3 del artículo 3 de la Ley 1437 de 2011, <select id="declara" style="padding: 5px; border-color: #bbbbbb; border-radius: 5px;" onchange="CambioDeclara();">
+                        <p style="text-align: justify;">De conformidad con el principio de imparcialidad señalado en el numeral 3 del artículo 3 de la Ley 1437 de 2011, <span id="Mdeclara" style="display: none; position: absolute; top: -17px; font-size: 12px; color: #dc3545;">Requerido</span><select id="declara" style="padding: 5px; border-color: #bbbbbb; border-radius: 5px;" onchange="CambioDeclara();">
                             <option value="">...</option>
                             <option value="1">NO</option>
                             <option value="2">SI</option>

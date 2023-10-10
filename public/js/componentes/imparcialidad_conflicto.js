@@ -88,95 +88,6 @@ function CambioDeclara(){
     }
 }
 
-function MostrarModalActa(){
-    let valido = true;
-    let requeridos = ['lugar_expedicion','profesion'];
-    if (tipoUsuario==1) {
-        requeridos.push('scargo');
-    } else {
-        requeridos.push('cargo');
-        requeridos.push('contrato');
-    }
-    requeridos.forEach(item => {
-        if (!ValidarCampo(item)) {
-            valido = false;
-        }
-    });
-    if (tipoUsuario == 0) {
-        valido = false;
-        $('#MtipoUsuario').show();
-    }
-    if ($('#declara').val() == '') {
-        valido = false;
-        $('#declara').css('border-color', '#dc3545');
-        $('#Mdeclara').show();
-    }
-    if ($('#declara').val() == 2) {
-        if (arrTabla1.length == 0 && arrTabla2.length == 0) {
-            valido = false;
-            $('#errTablas').show();
-        }
-        if (!ValidarCampo('motivo')) {
-            valido = false;
-        }
-    }
-    if (valido) {
-        $('#Mfirma').hide();
-        if (firma=='') {
-            $('#btnFirmar').prop('disabled', true);
-            $('#btnPrevia').prop('disabled', true);
-        } else {
-            $('#btnFirmar').prop('disabled', false);
-            $('#btnPrevia').prop('disabled', false);
-        }
-        $('#modalActa').modal({backdrop: 'static', keyboard: false});
-    }
-}
-
-function VistaPrevia(){
-    let cargo = $('#cargo').val();
-    if (tipoUsuario==1) {
-        cargo = $('#scargo').val()+'-'+$("#scargo  option:selected").text();
-    }
-    let datos = {
-        previa: 1,
-        id_dec,
-        lugar_expedicion: $('#lugar_expedicion').val(),
-        cargo: cargo,
-        contrato: $('#contrato').val(),
-        tipoUsuario,
-        profesion: $('#profesion').val(),
-        declara: $('#declara').val(),
-        motivo: $('#motivo').val(),
-        arrTabla1,
-        arrTabla2
-    };
-    $.ajax({
-        url: urlVee+'planesgestion/conflicto_guardar',
-        type: "POST",
-        data: JSON.stringify(datos),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        beforeSend: function () { Loading(true); }
-    }).done(function(result) {
-        Loading(false);
-        if (result.tipo == 'error' && result.error == 'logout') {
-            NotyMensaje(result.texto, result.tipo, function(){
-                Logout();
-            });
-        } else{
-            if (result.estado) {
-                window.open('/carta.pdf', '_blank');
-            } else {
-                console.error(result.error);
-            }
-        }
-    }).fail(function (XMLHttpRequest) {
-        Loading(false);
-        console.error("ResponseText = " + XMLHttpRequest.responseText);
-    });
-}
-
 function Firmar(){
     let cargo = $('#cargo').val();
     if (tipoUsuario==1) {
@@ -218,10 +129,46 @@ function ParaFirmar(){
             valido = false;
         }
     });
-
-    if (baseTrabajo.firma == null) {
-        $('#alertNoFirma').show();
-        $('#botonesFirma').hide();
+    if ($('#declara').val() == '') {
+        valido = false;
+        $('#declara').css('border-color', 'rgb(231 74 59)');
+        $('#Mdeclara').show();
     }
-    Mostrar('modalFirmar');
+    if ($('#declara').val() == 2) {
+        if (arrTabla1.length == 0 && arrTabla2.length == 0) {
+            valido = false;
+            $('#errTablas').show();
+        }
+        if (!ValidarCampo('motivo')) {
+            valido = false;
+        }
+    }
+    if (valido) {
+        if (baseTrabajo.firma == null) {
+            $('#alertNoFirma').show();
+            $('#botonesFirma').hide();
+        }
+        Mostrar('modalFirmar');
+    }
+}
+
+function GenerarVistaPrevia() {
+    let cargo = $('#cargo').val();
+    if ($('#tipoUsuario').val() == 1) {
+        cargo = $('#scargo').val()+'-'+$("#scargo  option:selected").text();
+    }
+    let datos = {
+        lugar_expedicion: $('#lugar_expedicion').val(),
+        cargo: cargo,
+        contrato: $('#contrato').val(),
+        tipoUsuario: $('#tipoUsuario').val(),
+        profesion: $('#profesion').val(),
+        declara: $('#declara').val(),
+        motivo: $('#motivo').val(),
+        arrTabla1,
+        arrTabla2
+    };
+    _RQ('POST','/back/previa_imparcialidad', datos, function(result) {
+        console.log(result);
+    });
 }
