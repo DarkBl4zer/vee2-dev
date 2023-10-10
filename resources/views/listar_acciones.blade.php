@@ -62,8 +62,8 @@ Acciones de prevención y control
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label for="accion">Tipo de acción <sup style="color: var(--danger)">*</sup></label>
-                            <select class="form-control" id="accion" onchange="CambiarTipoAccion();">
+                            <label for="id_actuacion">Tipo de actuación <sup style="color: var(--danger)">*</sup></label>
+                            <select class="form-control" id="id_actuacion" onchange="CambiarTipoAccion();">
                                 @foreach ($acciones as $item)
                                 <option value="{{$item->valor_numero}}">{{$item->nombre}}</option>
                                 @endforeach
@@ -159,10 +159,11 @@ Acciones de prevención y control
         </div>
       </div>
     </div>
-  </div>
+</div>
 
-  <input type="hidden" id="idCreaEdita" value="0">
+<input type="hidden" id="idCreaEdita" value="0">
 
+@include('componentes.imparcialidad_conflicto', ['profesiones' => $profesiones, 'cargos' => $cargos])
 
 @endsection
 @section('Xscripts')

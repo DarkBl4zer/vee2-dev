@@ -160,6 +160,41 @@ function FiltrarCaracteres(id, tipo){
     ValidarCampo(id);
 }
 
+function FiltrarCaracteresOLD(idx, tipo, cont = false) {
+    $('#'+idx).removeClass('is-invalid');
+    let valor = $('#'+idx).val();
+    let out = '';
+    let filtro = '';
+    if (tipo == 'numeros') {
+        filtro = '1234567890';
+    }
+    if (tipo == 'contrato') {
+        filtro = '1234567890-';
+    }
+    if (tipo == 'textos') {
+        filtro = 'abcdefghijklmnñopqrstuvwxyzáéíóúüABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ-()_,;.?¿/%$#:@1234567890" ';
+    }
+    if (tipo == 'listas') {
+        filtro = 'abcdefghijklmnñopqrstuvwxyzáéíóúüABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ1234567890 ';
+    }
+    if (tipo == 'mayusculas') {
+        filtro = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ ';
+    }
+    for (let i = 0; i < valor.length; i++){
+        if (valor.charAt(i) == "\n") {
+            out += valor.charAt(i);
+        }
+        if (filtro.indexOf(valor.charAt(i)) != -1){
+            out += valor.charAt(i);
+        }
+    }
+    if (cont) {
+        let cuenta = cont - out.length;
+        $('#cont_' + idx).html('<i class="fas fa-align-left"></i> ' + cuenta);
+    }
+    return out;
+}
+
 function DisableI(id, tipo, click=''){
     (tipo)?$('#'+id).css('cursor', 'not-allowed'):$('#'+id).css('cursor', 'pointer');
     $('#'+id).attr('onclick', click);

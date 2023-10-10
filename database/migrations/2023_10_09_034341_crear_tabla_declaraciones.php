@@ -13,6 +13,19 @@ return new class extends Migration
     {
         Schema::create('vee2_declaraciones', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_veeduria');
+            $table->unsignedBigInteger('id_usuario');
+            $table->boolean('firmado')->default(false);
+            $table->string('lugar_expedicion', 255)->nullable();
+            $table->boolean('funcionario')->nullable();
+            $table->unsignedBigInteger('id_profesion')->nullable();
+            $table->string('cargo', 255)->nullable();
+            $table->string('contrato', 255)->nullable();
+            $table->boolean('conflicto')->nullable();
+            $table->longText('explicacion')->nullable();
+            $table->boolean('activo')->default(true);
+            $table->string('archivo_firmado', 255)->nullable();
+            $table->longText('motivo_rechazo')->nullable();
             $table->timestamps();
         });
     }

@@ -5,6 +5,7 @@ date_default_timezone_set('America/Bogota');
 
 use App\Models\AccionesModel;
 use App\Models\ActasModel;
+use App\Models\CargosModel;
 use App\Models\ConfiguracionesModel;
 use App\Models\DelegadasModel;
 use App\Models\ListasModel;
@@ -152,8 +153,10 @@ class FrontendController extends Controller
             $paraSeguimiento .= '<option value="'.$item->id.'">'.$nombre.'</option>';
         }
         $temasp = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->get();
+        $profesiones = ListasModel::where('tipo', 'profesiones')->where('activo', true)->get();
+        $cargos = CargosModel::orderBy('nombre_cargo', 'asc')->get();
         $slag = 'accionesdepyc';
-        return view('listar_acciones', compact('sesion', 'slag', 'years', 'permiteNueva', 'acciones', 'paraSeguimiento', 'temasp'));
+        return view('listar_acciones', compact('sesion', 'slag', 'years', 'permiteNueva', 'acciones', 'paraSeguimiento', 'temasp', 'profesiones', 'cargos'));
     }
 
     public function ListarPlanesTrabajo(Request $request){

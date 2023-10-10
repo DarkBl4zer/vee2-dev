@@ -39,6 +39,13 @@ class PlantillaHTML{
         if (data.guardar) {
             html += `<i class="fas fa-save inputFila${data.id}" data-toggle="tooltip" data-placement="top" title="Guardar" onclick="ConfirmarGuardar(${data.id});"></i>`;
         }
+        if (data.conflicto) {
+            if (data.estado == 1 || data.estado == 3) {
+                html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearImparcialidadC(${data.id});"></i>`;
+            } else{
+                html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerImparcialidadC(${data.id});"></i>`;
+            }
+        }
         return html;
     }
 

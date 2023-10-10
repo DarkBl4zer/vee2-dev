@@ -7,6 +7,7 @@ use App\Imports\TemasImport;
 use App\Models\AccionEntidadModel;
 use App\Models\AccionesModel;
 use App\Models\ActasModel;
+use App\Models\CargosModel;
 use App\Models\DelegadaEntidadModel;
 use App\Models\DelegadasModel;
 use App\Models\FestivosModel;
@@ -32,8 +33,7 @@ class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->get();
-        return $years;
+        return $sesion;
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
@@ -54,6 +54,7 @@ class BackendController extends Controller
                     "cedula" => $usuario->cedula,
                     "email" => $usuario->email,
                     "nombre" => $usuario->nombre,
+                    "firma" => (count($usuario->firmas)==0)?"null":"'".$usuario->firmas[0]->cnv_firma."'",
                     "d_sinproc" => $request->delegada,
                     "perfiles" => $usuario->perfiles,
                     "festivos" => $fechas,
@@ -280,11 +281,17 @@ class BackendController extends Controller
                     );
                     $idModelo = FirmasModel::create($firma)->id;
                     $this->Auditoria($sesion->id, "INSERT", "FirmasModel", $idModelo, null, $firma);
+                    $XSesion = (object)Session::get('UsuarioVee');
+                    $XSesion->firma = "'cnv_".$date.".".$extension."'";
+                    Session::put('UsuarioVee', $XSesion);
                 } else{
                     $old = $firmas[0];
                     $new = array('cnv_firma' => 'cnv_'.$date.'.'.$extension, 'escala' => $request->escalaFirma);
                     FirmasModel::where('id', $firmas[0]->id)->update($new);
                     $this->Auditoria($sesion->id, "UPDATE", "FirmasModel", $firmas[0]->id, $old, $new);
+                    $XSesion = (object)Session::get('UsuarioVee');
+                    $XSesion->firma = "'cnv_".$date.".".$extension."'";
+                    Session::put('UsuarioVee', $XSesion);
                 }
                 DB::commit();
                 return $this->MsjRespuesta(true);
@@ -533,7 +540,11 @@ class BackendController extends Controller
     public function AccionesPorPeriodo(Request $request){
         try {
             $sesion = (object)$request->sesion;
-            $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+            if($sesion->trabajo->id_rol < 3){
+                $datos = AccionesModel::where('year', $request->periodo)->orderBy('id', 'asc')->get();
+            } else{
+                $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+            }
             return response()->json($datos);
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getMessage());
@@ -578,7 +589,6 @@ class BackendController extends Controller
         try {
             $sesion = (object)$request->sesion;
             $new = array();
-            $new["id_delegada"]=$sesion->trabajo->id_delegada;
             $new["id_actuacion"]=$request->id_actuacion;
             $new["id_temap"]=$request->id_temap;
             $new["id_temas"]=$request->id_temas;
@@ -588,13 +598,24 @@ class BackendController extends Controller
             $new["numero_profesionales"]=$request->numero_profesionales;
             $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');;
             $new["fecha_final"]=Carbon::createFromFormat('d/m/Y', $request->fecha_final)->format('Y-m-d');;
-            $new["year"]=date("Y");
             $new["id_padre"]=$request->id_padre;
             if ($request->id != 0) {
                 $old = AccionesModel::where('id', $request->id)->first();
                 AccionesModel::where('id', $request->id)->update($new);
                 $this->Auditoria($sesion->id, "UPDATE", "AccionesModel", $request->id, $old, $new);
+                AccionEntidadModel::where('id_accion', $request->id)->update(['activo' => false]);
+                $this->Auditoria($sesion->id, "UPDATE", "AccionEntidadModel", $request->id, 'activo:true ALL', 'activo:false ALL');
+                foreach ($request->entidades as $item) {
+                    $new2 = [
+                        'id_accion' => $request->id,
+                        'id_entidad' => $item,
+                    ];
+                    $idAcEnt = AccionEntidadModel::create($new2)->id;
+                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
+                }
             } else{
+                $new["id_delegada"]=$sesion->trabajo->id_delegada;
+                $new["year"]=date("Y");
                 $idModelo = AccionesModel::create($new)->id;
                 $this->Auditoria($sesion->id, "INSERT", "AccionesModel", $idModelo, null, $new);
                 foreach ($request->entidades as $item) {
@@ -610,6 +631,16 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getMessage());
+        }
+    }
+
+    public function AccionPorId(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $accion = AccionesModel::where('id', $request->id)->first();
+            return response()->json($accion);
+        } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getMessage());
         }
     }

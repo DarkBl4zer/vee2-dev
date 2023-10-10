@@ -106,3 +106,7 @@ input, select{
 .invalid-select2{
     border: solid 1px #e74a3b !important;
 }
+
+.top10{
+    margin-top: 10px;
+}

@@ -2,6 +2,9 @@ $(document).ready(function() {
     let hoy = new Date();
     SetCampoFecha('fechaPG', hoy.toISOString().split('T')[0]);
     ConsultarAcciones();
+    _RQ('GET','/back/entidades_por_delegada', null, function(result) {$('#loading').hide();
+        $('#entidades').html(plantillaHTML.options(result));
+    });
 });
 
 var plantillaHTML = new PlantillaHTML();
@@ -29,34 +32,42 @@ function LlenaTabla(datos) {
         {title: "#"},
         {title: "Título"},
         {title: "Entidad(es)"},
-        {title: "Fecha creación"},
+        {title: "Fechas"},
         {title: "Acciones"}
     ];
     let targets = [4];
+    let targets2 = [3];
     if(!puedeEditar){
         columns = [
             {title: "#"},
             {title: "Título"},
             {title: "Entidad(es)"},
             {title: "Delegada / Local"},
-            {title: "Fecha creación"},
+            {title: "Fechas"},
             {title: "Acciones"}
         ];
         targets = [5];
+        targets2 = [4];
     }
     datos.forEach(element => {
         let columna = [];
-        columna.push(element.numero);
+        columna.push(element.numero+'<br>'+element.nombreestado);
         columna.push(element.titulo);
-        columna.push(element.entidades);
+        columna.push(element.entidades.string);
         if (!puedeEditar) {
             columna.push(element.delegada);
         }
-        columna.push(element.creado);
-        columna.push(plantillaHTML.itemAccionesTabla({
-            id: element.id,
-            editar: true
-        }));
+        columna.push(element.fechas);
+        if (puedeEditar && ppEditar) {
+            columna.push(plantillaHTML.itemAccionesTabla({
+                id: element.id,
+                estado: element.estado,
+                editar: true,
+                conflicto: true
+            }));
+        } else{
+            columna.push('');
+        }
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -66,6 +77,7 @@ function LlenaTabla(datos) {
         data: filas,
         columnDefs: [
             {targets: targets, className: "align-middle text-center", width: "70px"},
+            {targets: targets2, width: "250px"},
             {targets: '_all', className: "align-middle"}
         ],
         language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
@@ -87,24 +99,20 @@ $('#dataTable').on('draw.dt', function () {
         $('#btnNuevo').show();
     }
     $('#loading').hide();
-} );
-
-function Nuevo() {
-    _RQ('GET','/back/entidades_por_delegada', null, function(result) {$('#loading').hide();
-        $('#entidades').html(plantillaHTML.options(result));
-        Mostrar('modalNuevaAccion');
-    });
-    Mostrar('modalNuevaAccion');
-}
-
-$('#modalNuevaAccion').on('shown.bs.modal', function () {
     $('#entidades').select2({
         dropdownParent: $('#modalNuevaAccion')
     });
-})
+} );
+
+function Nuevo() {
+    $('#modalNuevaAccionLabel').html('Nueva acción');
+    $('#idCreaEdita').val(0);
+    LimpiarFormulario();
+    Mostrar('modalNuevaAccion');
+}
 
 function CambiarTipoAccion(){
-    if ($('#accion').val() == 2) {
+    if ($('#id_actuacion').val() == 2) {
         $('#rowPadre').show();
     }else{
         $('#rowPadre').hide();
@@ -161,7 +169,6 @@ function CambioFecha(idx){
 }
 
 function ConfirmarGuardarNuevaAccion(){
-    $('#idCreaEdita').val(0);
     let valido = true;
     let requeridos = ['temap', 'titulo', 'objetivo_general', 'numero_profesionales', 'fechaPG', 'fechaIni', 'fechaFin'];
     if ($('#rowTemaS').is(':visible')) {
@@ -183,7 +190,11 @@ function ConfirmarGuardarNuevaAccion(){
         $('#select2-entidades-container').parent().removeClass('invalid-select2');
     }
     if (valido) {
-        $('#confirmacionMsj').html('¿Seguro desea guardar la nueva acción?');
+        if ($('#idCreaEdita').val()==0) {
+            $('#confirmacionMsj').html('¿Seguro desea guardar la nueva acción?');
+        } else {
+            $('#confirmacionMsj').html('¿Seguro desea actualizar la acción seleccionada?');
+        }
         $('#confirmacionBtn').attr("onclick","Guardar();");
         Mostrar('confirmacionModal');
     }
@@ -194,7 +205,7 @@ function Guardar(){
     Ocultar('modalNuevaAccion');
     let datos = {
         id: $('#idCreaEdita').val(),
-        id_actuacion: $('#accion').val(),
+        id_actuacion: $('#id_actuacion').val(),
         id_temap: $('#temap').val(),
         id_temas: $('#temas').val(),
         titulo: $('#titulo').val(),
@@ -211,4 +222,64 @@ function Guardar(){
             ConsultarAcciones();
         });
     });
+}
+
+function Editar(id) {
+    $('#modalNuevaAccionLabel').html('Actualizar acción');
+    LimpiarFormulario();
+    let datos = {id};
+    _RQ('GET','/back/accion_por_id', datos, function(result) {
+        console.log(result);
+        $('#id_actuacion').val(result.id_actuacion);
+        $('#temap').val(result.id_temap);
+        CambiarTemaP();
+        if (result.id_padre != null) {
+            $('#id_padre').val(result.id_padre);
+            $('#rowPadre').show();
+        }
+        if (result.id_temas != null) {
+            $('#temas').html(result.id_temas);
+            $('#rowTemaS').show();
+        }
+        $('#rowActa').attr("onclick","DescargaActa('"+result.archivoacta+"');");
+        $('#rowActa').show();
+        $('#titulo').val(result.titulo);
+        $('#objetivo_general').val(result.objetivo_general);
+        $('#entidades').select2().val(result.entidades.arr).trigger("change");
+        $('#numero_profesionales').val(result.numero_profesionales);
+        $('#fechaPG').val(result.fecha_plangestion.split('-').reverse().join('/'));
+        $('#fechaIni').val(result.fecha_inicio.split('-').reverse().join('/'));
+        $('#fechaFin').val(result.fecha_final.split('-').reverse().join('/'));
+        setTimeout(() => {
+            if (result.id_temas != null) {
+                $('#temas').val(result.id_temas);
+                $('#rowTemaS').show();
+            }
+            $('#idCreaEdita').val(id);
+            Mostrar('modalNuevaAccion');
+            $('#loading').hide();
+        }, 1000);
+    });
+}
+
+function LimpiarFormulario(){
+    $('#id_padre').val('');
+    $('#rowPadre').hide();
+    $('#temas').html("");
+    $('#rowTemaS').hide();
+    $('#rowActa').attr("onclick","");
+    $('#rowActa').hide();
+    $('#temap').val('');
+    $('#titulo').val('');
+    $('#objetivo_general').val('');
+    $('#entidades').select2().val([]).trigger("change");
+    $('#numero_profesionales').val('');
+    $('#fechaPG').val('');
+    $('#fechaIni').val('');
+    $('#fechaFin').val('');
+}
+
+function CrearImparcialidadC(id) {
+    $('#idCreaEdita').val(id);
+    Mostrar('modalImparcialidad');
 }
