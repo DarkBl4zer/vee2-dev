@@ -70,7 +70,7 @@ $('#dataTable').on('draw.dt', function () {
     $('[data-toggle="tooltip"]').tooltip();
     $('#btnNuevo').show();
     $('#loading').hide();
-} );
+});
 
 function Nuevo() {
     Mostrar('modalNuevaActa');

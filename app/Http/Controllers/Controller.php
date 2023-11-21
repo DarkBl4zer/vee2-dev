@@ -9,6 +9,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 class Controller extends BaseController
 {
@@ -60,5 +61,19 @@ class Controller extends BaseController
             'old_json' => ($old != null)?json_encode($old, JSON_UNESCAPED_UNICODE):null,
             'new_json' => json_encode($new, JSON_UNESCAPED_UNICODE)
         ));
+    }
+
+    public function ImagenFirma($firma){
+        if (Storage::disk('local')->exists('/vee2_firmas/'.$firma)) {
+            $path = storage_path().'/app/vee2_firmas/'.$firma;
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $data = file_get_contents($path);
+            $imgFirma = 'data:image/'.$type.';base64,'.base64_encode($data);
+            return $imgFirma;
+        } else{
+            $noFirmaT = pathinfo(public_path('img/noFirma.jpg'), PATHINFO_EXTENSION);
+            $noFirmaD = file_get_contents(public_path('img/noFirma.jpg'));
+            return 'data:image/'.$noFirmaT.';base64,'.base64_encode($noFirmaD);
+        }
     }
 }

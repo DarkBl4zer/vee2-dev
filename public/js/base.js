@@ -4,7 +4,7 @@ $(document).ready(function(){
 
 function ConsultarNotificaciones() {
     let datos = {todo:false};
-    _RQ('GET','/back/notificaciones', datos, function(result) {$('#loading').hide();
+    _RQ('GET','/back/notificaciones', datos, function(result) {
         let plantillaHTML = new PlantillaHTML();
         let html = "";
         if (result.length == 0) {

@@ -7,6 +7,7 @@ $(document).ready(function() {
         theme: 'bootstrap4',
         dropdownCssClass: 'select2_14'
     });
+    $('#loading').hide();
 });
 
 function ConsultarLista(valor){

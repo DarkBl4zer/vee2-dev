@@ -27,7 +27,6 @@ Acciones de prevención y control
                 <div class="form-group" style="margin-top: 20px; width: 95px;">
                     <select class="form-control select2" id="periodo" name="periodo" onchange="ConsultarAcciones();">
                         <option value="{{date("Y")}}">{{date("Y")}}</option>
-                        <option value="2022">2022</option>
                         @foreach ($years as $item)
                         <option value="{{$item->year}}">{{$item->year}}</option>
                         @endforeach
@@ -115,23 +114,17 @@ Acciones de prevención y control
                         <div class="form-group">
                             <label for="objetivo_general">Objetivo general <sup style="color: var(--danger)">*</sup></label>
                             <textarea class="form-control" id="objetivo_general" rows="3" maxlength="2000" onkeyup="FiltrarCaracteres(this.id, 'itemLista');"></textarea>
-                          </div>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
                         <label for="entidades">Entidad(s) <sup style="color: var(--danger)">*</sup></label>
                         <select id="entidades" class="form-control" name="entidades[]" multiple="multiple" style="width: 100% !important;">
-                          </select>
+                        </select>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="dataTableEntidades" width="100%" cellspacing="0" style="font-size: 14px;">
-                        </table>
-                    </div>
-                </div>
-                <div class="row">
+                <div class="row top10">
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="numero_profesionales"># Profesionales <sup style="color: var(--danger)">*</sup></label>
@@ -158,6 +151,33 @@ Acciones de prevención y control
             <button type="button" class="btn btn-primary" onclick="ConfirmarGuardarNuevaAccion();">Guardar</button>
         </div>
       </div>
+    </div>
+</div>
+
+<!-- Modal ver/repetir declración -->
+<div class="modal fade" id="modalVerRepetirDeclaracion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row" id="botonesFirma">
+                        <div id="iconVerDeclaracion" class="col-md-6 text-center" data-toggle="tooltip" data-placement="top" title="Ver la declaración" style="line-height: 13px; cursor: pointer;">
+                            <i class="fas fa-file-contract" style="font-size: 32px;"></i>
+                            <br><br><span style="font-size: 13px;">Ver la declaración<span>
+                        </div>
+                        <div id="iconRepetirDeclaracion" class="col-md-6 text-center" data-toggle="tooltip" data-placement="top" title="Registrar nuevamente la declaración" style="line-height: 13px; cursor: pointer;">
+                            <i class="fas fa-redo" style="font-size: 32px"></i>
+                            <br><br><span style="font-size: 13px;">Registrar nuevamente la declaración<span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

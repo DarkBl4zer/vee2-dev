@@ -23,19 +23,101 @@ Planes de trabajo
         <div class="row">
             <div class="col-4">
                 <h6 class="m-0 font-weight-bold text-primary">Planes de trabajo</h6>
+                <div class="form-group" style="margin-top: 20px; width: 95px;">
+                    <select class="form-control select2" id="periodo" name="periodo" onchange="ConsultarPlanes();">
+                        <option value="{{date("Y")}}">{{date("Y")}}</option>
+                        @foreach ($years as $item)
+                        <option value="{{$item->year}}">{{$item->year}}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </div>
     </div>
     <div class="card-body" style="position: relative;">
-        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nueva acta" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
+        @if ($permiteNueva)
+        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nueva acta" onclick="Nuevo(0);" style="font-size: 24px; cursor: pointer; display: none;"></i>
+        @endif
         <div class="table-responsive">
-            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 14px;">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 13px;">
             </table>
         </div>
     </div>
 </div>
+
+<!-- Modal Nuevo plan-->
+<div class="modal fade" id="modalNuevoPlan" tabindex="-1" role="dialog" aria-labelledby="modalNuevoPlanLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalNuevoPlanLabel">Nueva plan de trabajo</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <table class="table table-bordered" id="dataTableAcciones" width="100%" cellspacing="0" style="font-size: 12px;">
+                        </table>
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="divErrorAcciones" class="col-md-12" style="font-size: 13px; color: var(--danger); display: none;">
+                        Se requiere seleccionar por lo menos una acción. *
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" >Cerrar</button>
+            <button type="button" class="btn btn-primary" onclick="ConfirmarGuardarNuevoPlan();">Guardar</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalFirmar" tabindex="-1" role="dialog" aria-labelledby="modalFirmarLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row" id="alertNoFirma" style="display: none;">
+                        <div class="col-md-12">
+                            <div class="alert alert-danger" role="alert">
+                                Por favor configure primero la firma <a href="/config/firma">aquí</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="botonesFirma">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-light btn-block" onclick="FirmarPlanT(true);"><i class="fas fa-file-pdf"></i> Vista previa</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary btn-block" onclick="FirmarPlanT(false);"><i class="fas fa-signature"></i> Firmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="idCreaEdita" value="0">
+
 @endsection
 @section('Xscripts')
+    <script>
+        var puedeEditar = {{($permiteNueva)?'true':'false'}};
+        var ppEditar = true;
+    </script>
     <!-- Page level plugins -->
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>

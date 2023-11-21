@@ -4,6 +4,7 @@ $(document).ready(function() {
         img.src = '/img/noFirma.jpg';
         img.onload = function() {
             ctx.drawImage(img, 0, 0, img.width, img.height);
+            $('#loading').hide();
         }
     } else{
         $('#escala').val(backFirma.escFirma);
@@ -15,6 +16,7 @@ $(document).ready(function() {
             noCopiar.src = '/img/noCopiar.png';
             noCopiar.onload = function() {
                 ctx.drawImage(noCopiar, 0, 0, noCopiar.width, noCopiar.height);
+                $('#loading').hide();
             }
         }
     }

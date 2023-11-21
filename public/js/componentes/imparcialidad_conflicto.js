@@ -144,7 +144,7 @@ function ParaFirmar(){
         }
     }
     if (valido) {
-        if (baseTrabajo.firma == null) {
+        if (!baseTrabajo.firma) {
             $('#alertNoFirma').show();
             $('#botonesFirma').hide();
         }
@@ -152,23 +152,36 @@ function ParaFirmar(){
     }
 }
 
-function GenerarVistaPrevia() {
+function GuardarDeclaracion(previa) {
     let cargo = $('#cargo').val();
+    let funcionario = false;
     if ($('#tipoUsuario').val() == 1) {
+        funcionario = true;
         cargo = $('#scargo').val()+'-'+$("#scargo  option:selected").text();
     }
     let datos = {
+        previa,
+        id_accion: $('#idCreaEdita').val(),
         lugar_expedicion: $('#lugar_expedicion').val(),
-        cargo: cargo,
+        cargo,
         contrato: $('#contrato').val(),
-        tipoUsuario: $('#tipoUsuario').val(),
-        profesion: $('#profesion').val(),
-        declara: $('#declara').val(),
-        motivo: $('#motivo').val(),
+        funcionario,
+        id_profesion: $('#profesion').val(),
+        conflicto: ($('#declara').val() == 2)?true:false,
+        explicacion: $('#motivo').val(),
         arrTabla1,
         arrTabla2
     };
-    _RQ('POST','/back/previa_imparcialidad', datos, function(result) {
-        console.log(result);
+    _RQ('POST','/back/guardar_declaracion', datos, function(result) {$('#loading').hide();
+        if (previa) {
+            window.open('/back/previa_declaracion/?id='+result.id, '_blank');
+        } else {
+            Ocultar('modalFirmar');
+            Ocultar('modalImparcialidad');
+            Ocultar('modalVerRepetirDeclaracion');
+            _MSJ(result.tipo, result.txt, function() {
+                ConsultarAcciones();
+            });
+        }
     });
 }

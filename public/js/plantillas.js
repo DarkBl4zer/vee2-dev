@@ -41,10 +41,23 @@ class PlantillaHTML{
         }
         if (data.conflicto) {
             if (data.estado == 1 || data.estado == 3) {
-                html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearImparcialidadC(${data.id});"></i>`;
+                html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearDeclaracion(${data.id});"></i>`;
             } else{
-                html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerImparcialidadC(${data.id});"></i>`;
+                html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerDeclaracion(${data.id}, ${data.estado}, '${data.dec_firmada}');"></i>`;
             }
+        }
+        if (data.generar) {
+            if (data.estado == 1 || data.estado == 3) {
+                html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Generar/Firmar" onclick="GenerarFirmar(${data.id});"></i>`;
+            } else{
+                html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Ver firmado" onclick="VerFirmado('${data.archivo}');"></i>`;
+            }
+        }
+        if (data.generar_pg && data.estado > 1) {
+            html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Vista previa" onclick="VistaPrevia(${data.id}, ${data.estado});"></i>`;
+        }
+        if (data.next) {
+            html += `<i class="fas fa-forward" data-toggle="tooltip" data-placement="top" title="Siguiente" onclick="Siguiente(${data.id});"></i>`;
         }
         return html;
     }
@@ -85,4 +98,41 @@ class PlantillaHTML{
         });
         return html;
     }
+
+    itemCheckbox(data){
+        return `<input type="checkbox" id="accionNo${data.id}" value="${data.id}" onclick="CheckAccion(${data.id});" ${(data.checked)?'checked':''}>`;
+    }
+
+    itemPerfilesUsuario(data){
+        let html = `<i class="fas fa-plus-circle mas_perfil" data-toggle="tooltip" data-placement="top" title="" onclick="NuevoPerfil(${data.id});" data-original-title="Nuevo perfil"></i>`;
+        html += `<ul style="position: relative; margin-bottom: 0px;">`;
+        data.apperfiles.forEach(element => {
+            if (element.id_rol == 1) {
+                html += `<li>${element.rol} <i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar perfil" onclick="ConfirmarEliminarPerfil(${element.id});" style="font-size: 16px;"></i></li>`;
+            }
+            if (element.id_rol == 2) {
+                html += `<li>${element.rol} <span style="font-size: 11px;">${element.tipo_coord}</span> <i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar perfil" onclick="ConfirmarEliminarPerfil(${element.id});" style="font-size: 16px;"></i></li>`;
+            }
+            if (element.id_rol > 2) {
+                html += `<li>${element.rol} <span style="font-size: 11px;">${element.delegada}</span> <i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar perfil" onclick="ConfirmarEliminarPerfil(${element.id});" style="font-size: 16px;"></i></li>`;
+            }
+        });
+        html += `</ul>`;
+        return html;
+    }
+
+    itemEquipoPlangestion(data){
+        let html = `<ul style="position: relative; margin-bottom: 0px;">`;
+        data.forEach(element => {
+            html += `<li>${element.nombre} ${(element.firmado)?'<i class="fas fa-check" data-toggle="tooltip" data-placement="top" title="Firmado" style="font-size: 14px;"></i>':'<i class="fas fa-ellipsis-h" data-toggle="tooltip" data-placement="top" title="Sin firmar" style="font-size: 14px;"></i>'}</li>`;
+        });
+        html += `</ul>`;
+        return html;
+    }
+
+    itemTablaActividadesCronograma(data){
+        let html = '<tr id="trActividad_'+index+'"><td style="text-align: left;">'+$('#cron_actividad').val()+'</td><td>'+nombreEtapa+'</td><td class="text-center"><i class="fas fa-trash-alt" onclick="EliminarActividad('+index+');" style="font-size: 18px;"></i></td></tr>';
+        $('#bodyTablaActividades').append(html);
+    }
+
 }

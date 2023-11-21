@@ -1,5 +1,6 @@
 $(document).ready(function() {
     bsCustomFileInput.init();
+    $('#loading').hide();
 });
 
 var plantillaHTML = new PlantillaHTML();

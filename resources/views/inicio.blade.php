@@ -89,4 +89,9 @@ Prevención y Control Función Pública
 </div>
 @endsection
 @section('Xscripts')
+<script>
+$(document).ready(function() {
+    $('#loading').hide();
+});
+</script>
 @endsection

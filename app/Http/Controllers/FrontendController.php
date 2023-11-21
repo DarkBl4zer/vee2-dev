@@ -35,30 +35,10 @@ class FrontendController extends Controller
 
     public function ConfigUsuarios(Request $request){
         $sesion = (object)$request->sesion;
-        $usuarios = DB::table('vee2_usuarios')->select(
-            'vee2_usuarios.id',
-            'vee2_usuarios.cedula',
-            'vee2_usuarios.nombre',
-            'vee2_usuarios.activo'
-        )->get();
-        foreach ($usuarios as $item) {
-            $perfiles = DB::table('vee2_perfiles')
-            ->join('vee2_roles', 'vee2_perfiles.id_rol', 'vee2_roles.id')
-            ->leftJoin('view_vee_delegadas', 'vee2_perfiles.id_delegada', 'view_vee_delegadas.id')
-            ->select(
-                'vee2_perfiles.id as id_perfil',
-                'vee2_perfiles.tipo_coord',
-                'vee2_roles.id as id_rol',
-                'vee2_roles.nombre as nombre_rol',
-                'view_vee_delegadas.nombre as nombre_delegada',
-            )->where('vee2_perfiles.id_usuario', $item->id)->get();
-            $item->perfiles = $perfiles;
-        }
         $roles = RolesModel::where('activo', true)->orderBy('nombre', 'asc')->get();
         $delegadas = DelegadasModel::where('activo', true)->orderBy('nombre', 'asc')->get();
         $getUsuariosVEE = ConfiguracionesModel::where('nombre', 'UrlSinproc')->first()->t_valor."config/00_wssinproc/getUsuariosVEE.php";
         $datos = (object)array(
-            "usuarios" => $usuarios,
             "roles" => $roles,
             "delegadas" => $delegadas,
             "getUsuariosVEE" => $getUsuariosVEE
@@ -155,13 +135,30 @@ class FrontendController extends Controller
         $temasp = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->get();
         $profesiones = ListasModel::where('tipo', 'profesiones')->where('activo', true)->get();
         $cargos = CargosModel::orderBy('nombre_cargo', 'asc')->get();
-        $slag = 'accionesdepyc';
+        $slag = 'plandetrabajo';
         return view('listar_acciones', compact('sesion', 'slag', 'years', 'permiteNueva', 'acciones', 'paraSeguimiento', 'temasp', 'profesiones', 'cargos'));
     }
 
     public function ListarPlanesTrabajo(Request $request){
         $sesion = (object)$request->sesion;
+        $permiteNueva = true;
+        if($sesion->trabajo->id_rol < 3){
+            $permiteNueva = false;
+            $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->groupBy('year')->orderBy('year', 'desc')->get();
+        } else{
+            $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->orderBy('year', 'desc')->get();
+        }
         $slag = 'plandetrabajo';
-        return view('listar_planest', compact('sesion', 'slag'));
+        return view('listar_planest', compact('sesion', 'slag', 'years', 'permiteNueva'));
+    }
+
+    public function ListarPlanesGestion(Request $request){
+        $sesion = (object)$request->sesion;
+        $permiteNueva = true;
+        if($sesion->trabajo->id_rol < 3){
+            $permiteNueva = false;
+        }
+        $slag = 'plandegestin';
+        return view('listar_planesg', compact('sesion', 'slag', 'permiteNueva'));
     }
 }

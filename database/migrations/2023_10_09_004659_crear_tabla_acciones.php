@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger('estado')->default(1);
             $table->boolean('activo')->default(true);
             $table->integer('year');
+            $table->string('cordis', 100)->nullable();
             $table->unsignedBigInteger('id_padre')->nullable();
             $table->timestamps();
         });

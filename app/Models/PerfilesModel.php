@@ -19,6 +19,7 @@ class PerfilesModel extends Model
         'usuario_crea'
     ];
     protected $guarded = ['id'];
+    protected $appends = ['aprol', 'apdelegada'];
 
     public function usuario() : HasOne {
         return $this->hasOne(UsuariosModel::class, 'id', 'id_usuario');
@@ -28,5 +29,17 @@ class PerfilesModel extends Model
     }
     public function delegada() : HasOne {
         return $this->hasOne(DelegadasModel::class, 'id', 'id_delegada');
+    }
+
+    public function getAprolAttribute(): String{
+        return RolesModel::where('id', $this->id_rol)->first()->nombre;
+    }
+
+    public function getApdelegadaAttribute(): String{
+        if (!is_null($this->id_delegada)) {
+            return DelegadasModel::where('id', $this->id_delegada)->first()->nombre;
+        } else{
+            return '';
+        }
     }
 }

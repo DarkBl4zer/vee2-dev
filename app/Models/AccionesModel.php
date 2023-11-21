@@ -24,10 +24,11 @@ class AccionesModel extends Model
         'estado',
         'activo',
         'year',
+        'cordis',
         'id_padre'
     ];
     protected $guarded = ['id'];
-    protected $appends = ['numero', 'entidades', 'delegada', 'fechas', 'archivoacta', 'nombreestado'];
+    protected $appends = ['numero', 'entidades', 'delegada', 'fechas', 'archivoacta', 'nombreestado', 'actuacion', 'padre'];
 
     public function getNumeroAttribute(): String{
         $actuaciones = ['', 'APC', 'SEG', 'SEGD', 'REVC'];
@@ -56,18 +57,38 @@ class AccionesModel extends Model
         return $fechas;
     }
 
-    public function getArchivoactaAttribute(): String{
+    public function getArchivoactaAttribute(): Array{
         if (!is_null($this->id_temas)) {
-            $archivo = TemasPModel::where('id', $this->id_temas)->first()->modelActa->archivo;
+            $archivo = TemasPModel::where('id', $this->id_temas)->first();
         } else {
-            $archivo = TemasPModel::where('id', $this->id_temas)->first()->modelActa->archivo;
+            $archivo = TemasPModel::where('id', $this->id_temap)->first();
         }
-        return $archivo;
+        return array(
+            'archivo' => $archivo->modelActa->archivo,
+            'tema' => $archivo->nombre
+        );
     }
 
     public function getNombreestadoAttribute(): String{
         $estado = ListasModel::where('tipo', 'estados_acciones')->where('valor_numero', $this->estado)->first();
         return '<span class="badge badge-'.$estado->valor_texto.'">'.$estado->nombre.'</span>';
+    }
+
+    public function getActuacionAttribute(): String{
+        $actuacion = ListasModel::where('tipo', 'actuacion_vee')->where('valor_numero', $this->id_actuacion)->first();
+        return $actuacion->nombre;
+    }
+
+    public function getPadreAttribute(): Array{
+        $padre = array();
+        if (!is_null($this->id_padre)) {
+            $temp = AccionesModel::where('id', $this->id_padre)->first();
+            $padre = array(
+                'titulo' => $temp->titulo,
+                'cordis' => $temp->cordis
+            );
+        }
+        return $padre;
     }
 
 }

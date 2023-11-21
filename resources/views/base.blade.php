@@ -131,7 +131,7 @@
     <script type="text/javascript">
         var baseTrabajo = {
             id_perfil: {{$sesion->trabajo->id_perfil}},
-            firma: {!!$sesion->firma!!}
+            firma: {!!(is_null($sesion->firma))?"false":"true";!!}
         };
         var festivos = ['{!!implode("', '",$sesion->festivos)!!}'];
         $('#li_{{$slag}}').addClass('active');

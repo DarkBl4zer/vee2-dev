@@ -4,16 +4,12 @@ namespace App\Http\Controllers;
 date_default_timezone_set('America/Bogota');
 
 use App\Imports\TemasImport;
-use App\Models\AccionEntidadModel;
-use App\Models\AccionesModel;
 use App\Models\ActasModel;
-use App\Models\CargosModel;
-use App\Models\DelegadaEntidadModel;
-use App\Models\DelegadasModel;
 use App\Models\FestivosModel;
 use App\Models\FirmasModel;
 use App\Models\ListasModel;
 use App\Models\PerfilesModel;
+use App\Models\PlanesGestionModel;
 use App\Models\RolesModel;
 use App\Models\RolSubMenuModel;
 use App\Models\TemasPModel;
@@ -28,12 +24,58 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        return $sesion;
+        $date = Carbon::now()->format('YmdHis');
+        $plangestion = PlanesGestionModel::where('id', 1)->first();
+        $funcionarios = array();
+        foreach ($plangestion->declaraciones as $item) {
+            if ($item['firmado']) {
+                $item['base64Firma'] = $this->ImagenFirma($item['firma']);
+            } else{
+                $item['base64Firma'] = "";
+            }
+            array_push($funcionarios, $item);
+        }
+
+        $datos = (object)array(
+            'delegado_nombre' => $sesion->nombre,
+            'delegado_firma' => $this->ImagenFirma($sesion->firma),
+            'delegado_fecha' => Carbon::now()->format('d/m/Y'),
+            'delegado_empleo' => 'Empleo',
+            'coordinador_nombre' => 'Coordinador',
+            'coordinador_firma' => $this->ImagenFirma("Firma"),
+            'coordinador_fecha' => 'Fecha',
+            'coordinador_empleo' => 'Empleo',
+        );
+
+        //return view('pdfs.plangestion', compact('plangestion', 'funcionarios'));
+        $pdf_pg = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true, 'isPhpEnabled' => true])->loadView('pdfs.plangestion', compact('plangestion', 'funcionarios', 'datos'));
+        $pdf_pg->setPaper("letter", 'portrait');
+        $pdf_pg->output();
+        $dom_pdf_pg = $pdf_pg->getDomPDF();
+        $canvas_pg = $dom_pdf_pg->get_canvas();
+        $canvas_pg->page_text(500, 51, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
+        //return $pdf_pg->stream();
+        $archivoPG = 'PG_1_'.$date.'.pdf';
+        $pdf_pg->save(storage_path().'/app/vee2_temp/'.$archivoPG);
+
+        $cronograma = $plangestion->cronograma;
+        $pdf_cron = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadView('pdfs.cronograma', compact('cronograma', 'funcionarios', 'datos'));
+        $pdf_cron->setPaper("A3", 'landscape');
+        $pdf_cron->output();
+        $dom_pdf_cron = $pdf_cron->getDomPDF();
+        $canvas_cron = $dom_pdf_cron->get_canvas();
+        $canvas_cron->page_text(1080, 62, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
+        //return $pdf_cron->stream();
+        $archivoCRON = 'CRON_1_'.$date.'.pdf';
+        $pdf_cron->save(storage_path().'/app/vee2_temp/'.$archivoCRON);
+
+
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
@@ -47,14 +89,14 @@ class BackendController extends Controller
                 $festivos = FestivosModel::get();
                 $fechas = array();
                 foreach ($festivos as $festivo) {
-                    array_push($fechas, Carbon::createFromFormat('Y-m-d H:i:s', $festivo->fecha) ->format('d.m.Y'));
+                    array_push($fechas, Carbon::createFromFormat('Y-m-d H:i:s', $festivo->fecha)->format('d.m.Y'));
                 }
                 $sesion = array(
                     "id" => $usuario->id,
                     "cedula" => $usuario->cedula,
                     "email" => $usuario->email,
                     "nombre" => $usuario->nombre,
-                    "firma" => (count($usuario->firmas)==0)?"null":"'".$usuario->firmas[0]->cnv_firma."'",
+                    "firma" => (count($usuario->firmas) == 0)?null:$usuario->firmas[0]->cnv_firma,
                     "d_sinproc" => $request->delegada,
                     "perfiles" => $usuario->perfiles,
                     "festivos" => $fechas,
@@ -85,7 +127,11 @@ class BackendController extends Controller
             Session::put('UsuarioVee', $sesion);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -111,7 +157,11 @@ class BackendController extends Controller
             UsuarioNotificacionModel::where('id', $request->id)->update(array("activo" => $request->estado));
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -153,7 +203,11 @@ class BackendController extends Controller
             UsuarioNotificacionModel::where('id', $request->id)->update(array("activo" => false, "eliminado" => true));
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -189,7 +243,11 @@ class BackendController extends Controller
                 return $this->MsjRespuesta(true);
             }
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -202,7 +260,11 @@ class BackendController extends Controller
             $this->Auditoria($sesion->id, "DELETE", "PerfilesModel", $request->id, $old, $new);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -215,7 +277,11 @@ class BackendController extends Controller
             $this->Auditoria($sesion->id, "UPDATE", "UsuariosModel", $request->id, $old, $new);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -251,7 +317,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -282,7 +352,7 @@ class BackendController extends Controller
                     $idModelo = FirmasModel::create($firma)->id;
                     $this->Auditoria($sesion->id, "INSERT", "FirmasModel", $idModelo, null, $firma);
                     $XSesion = (object)Session::get('UsuarioVee');
-                    $XSesion->firma = "'cnv_".$date.".".$extension."'";
+                    $XSesion->firma = "cnv_".$date.".".$extension;
                     Session::put('UsuarioVee', $XSesion);
                 } else{
                     $old = $firmas[0];
@@ -290,7 +360,7 @@ class BackendController extends Controller
                     FirmasModel::where('id', $firmas[0]->id)->update($new);
                     $this->Auditoria($sesion->id, "UPDATE", "FirmasModel", $firmas[0]->id, $old, $new);
                     $XSesion = (object)Session::get('UsuarioVee');
-                    $XSesion->firma = "'cnv_".$date.".".$extension."'";
+                    $XSesion->firma = "cnv_".$date.".".$extension;
                     Session::put('UsuarioVee', $XSesion);
                 }
                 DB::commit();
@@ -300,7 +370,11 @@ class BackendController extends Controller
             }
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -310,7 +384,11 @@ class BackendController extends Controller
             $datos = ListasModel::where('tipo', $request->valor)->get();
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -348,7 +426,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -364,7 +446,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -380,7 +466,11 @@ class BackendController extends Controller
             }
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -409,7 +499,11 @@ class BackendController extends Controller
             }
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -433,7 +527,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -446,7 +544,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -466,7 +568,11 @@ class BackendController extends Controller
             }
             return response()->json(array('datos' => $datos, 'temasp' => $temasp));
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -492,7 +598,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -508,7 +618,11 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
+            return $this->MsjRespuesta(false, [
+                'getFile' => $ex->getFile(),
+                'getLine' => $ex->getLine(),
+                'getMessage' => $ex->getMessage()
+            ]);
         }
     }
 
@@ -533,166 +647,6 @@ class BackendController extends Controller
                 $failure->values(); // The values of the row that has failed.
             }*/
             return $this->MsjRespuesta(false, $failures);
-        }
-    }
-
-    /* ====================================================== ACCIONES ====================================================== */
-    public function AccionesPorPeriodo(Request $request){
-        try {
-            $sesion = (object)$request->sesion;
-            if($sesion->trabajo->id_rol < 3){
-                $datos = AccionesModel::where('year', $request->periodo)->orderBy('id', 'asc')->get();
-            } else{
-                $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
-            }
-            return response()->json($datos);
-        } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
-        }
-    }
-
-    public function TemasPorTemap(Request $request){
-        try {
-            $sesion = (object)$request->sesion;
-            $temas = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 2)->where('id_padre', $request->temap)->get();
-            if (count($temas) == 0) {
-                $acta = TemasPModel::where('id', $request->temap)->first()->modelActa->archivo;
-            } else{
-                $acta = $temas->first()->modelActa->archivo;
-            }
-            return response()->json(array('temas' => $temas, 'acta' => $acta));
-        } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
-        }
-    }
-
-    public function EntidadesPorDelegada(Request $request){
-        try {
-            $sesion = (object)$request->sesion;
-            $delegadaEntidad = DelegadaEntidadModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('activo', true)->get();
-            $entidades = array();
-            foreach ($delegadaEntidad as $item) {
-                if(!is_null($item->entidad)){
-                    array_push($entidades, $item->entidad);
-                }
-            }
-            $key_values = array_column($entidades, 'nombre');
-            array_multisort($key_values, SORT_ASC, $entidades);
-            return response()->json($entidades);
-        } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
-        }
-    }
-
-    public function CrearActualizarAccion(Request $request){
-        DB::beginTransaction();
-        try {
-            $sesion = (object)$request->sesion;
-            $new = array();
-            $new["id_actuacion"]=$request->id_actuacion;
-            $new["id_temap"]=$request->id_temap;
-            $new["id_temas"]=$request->id_temas;
-            $new["titulo"]=$request->titulo;
-            $new["objetivo_general"]=$request->objetivo_general;
-            $new["fecha_plangestion"]=Carbon::createFromFormat('d/m/Y', $request->fecha_plangestion)->format('Y-m-d');
-            $new["numero_profesionales"]=$request->numero_profesionales;
-            $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');;
-            $new["fecha_final"]=Carbon::createFromFormat('d/m/Y', $request->fecha_final)->format('Y-m-d');;
-            $new["id_padre"]=$request->id_padre;
-            if ($request->id != 0) {
-                $old = AccionesModel::where('id', $request->id)->first();
-                AccionesModel::where('id', $request->id)->update($new);
-                $this->Auditoria($sesion->id, "UPDATE", "AccionesModel", $request->id, $old, $new);
-                AccionEntidadModel::where('id_accion', $request->id)->update(['activo' => false]);
-                $this->Auditoria($sesion->id, "UPDATE", "AccionEntidadModel", $request->id, 'activo:true ALL', 'activo:false ALL');
-                foreach ($request->entidades as $item) {
-                    $new2 = [
-                        'id_accion' => $request->id,
-                        'id_entidad' => $item,
-                    ];
-                    $idAcEnt = AccionEntidadModel::create($new2)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
-                }
-            } else{
-                $new["id_delegada"]=$sesion->trabajo->id_delegada;
-                $new["year"]=date("Y");
-                $idModelo = AccionesModel::create($new)->id;
-                $this->Auditoria($sesion->id, "INSERT", "AccionesModel", $idModelo, null, $new);
-                foreach ($request->entidades as $item) {
-                    $new2 = [
-                        'id_accion' => $idModelo,
-                        'id_entidad' => $item,
-                    ];
-                    $idAcEnt = AccionEntidadModel::create($new2)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
-                }
-            }
-            DB::commit();
-            return $this->MsjRespuesta(true);
-        } catch (Exception $ex) {
-            DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
-        }
-    }
-
-    public function AccionPorId(Request $request){
-        try {
-            $sesion = (object)$request->sesion;
-            $accion = AccionesModel::where('id', $request->id)->first();
-            return response()->json($accion);
-        } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, $ex->getMessage());
-        }
-    }
-
-    public function CrearActualizarAccion(Request $request){
-        DB::beginTransaction();
-        try {
-            $sesion = (object)$request->sesion;
-            $new = array();
-            $new["id_actuacion"]=$request->id_actuacion;
-            $new["id_temap"]=$request->id_temap;
-            $new["id_temas"]=$request->id_temas;
-            $new["titulo"]=$request->titulo;
-            $new["objetivo_general"]=$request->objetivo_general;
-            $new["fecha_plangestion"]=Carbon::createFromFormat('d/m/Y', $request->fecha_plangestion)->format('Y-m-d');
-            $new["numero_profesionales"]=$request->numero_profesionales;
-            $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');;
-            $new["fecha_final"]=Carbon::createFromFormat('d/m/Y', $request->fecha_final)->format('Y-m-d');;
-            $new["id_padre"]=$request->id_padre;
-            if ($request->id != 0) {
-                $old = AccionesModel::where('id', $request->id)->first();
-                AccionesModel::where('id', $request->id)->update($new);
-                $this->Auditoria($sesion->id, "UPDATE", "AccionesModel", $request->id, $old, $new);
-                AccionEntidadModel::where('id_accion', $request->id)->update(['activo' => false]);
-                $this->Auditoria($sesion->id, "UPDATE", "AccionEntidadModel", $request->id, 'activo:true ALL', 'activo:false ALL');
-                foreach ($request->entidades as $item) {
-                    $new2 = [
-                        'id_accion' => $request->id,
-                        'id_entidad' => $item,
-                    ];
-                    $idAcEnt = AccionEntidadModel::create($new2)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
-                }
-            } else{
-                $new["id_delegada"]=$sesion->trabajo->id_delegada;
-                $new["year"]=date("Y");
-                $idModelo = AccionesModel::create($new)->id;
-                $this->Auditoria($sesion->id, "INSERT", "AccionesModel", $idModelo, null, $new);
-                foreach ($request->entidades as $item) {
-                    $new2 = [
-                        'id_accion' => $idModelo,
-                        'id_entidad' => $item,
-                    ];
-                    $idAcEnt = AccionEntidadModel::create($new2)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
-                }
-            }
-            DB::commit();
-            return $this->MsjRespuesta(true);
-        } catch (Exception $ex) {
-            DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getMessage());
         }
     }
 

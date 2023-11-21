@@ -110,3 +110,36 @@ input, select{
 .top10{
     margin-top: 10px;
 }
+
+.page-link{
+    padding: 6px;
+    font-size: 13px;
+}
+
+.mas_perfil{
+    font-size: 20px !important;
+    position: absolute !important;
+    z-index: 100 !important;
+}
+
+.table td{
+    padding: 2px 4px 2px 4px;
+}
+
+.table th{
+    padding: 6px;
+}
+
+table.dataTable>thead .sorting:before, table.dataTable>thead .sorting:after, table.dataTable>thead .sorting_asc:before, table.dataTable>thead .sorting_asc:after, table.dataTable>thead .sorting_desc:before, table.dataTable>thead .sorting_desc:after, table.dataTable>thead .sorting_asc_disabled:before, table.dataTable>thead .sorting_asc_disabled:after, table.dataTable>thead .sorting_desc_disabled:before, table.dataTable>thead .sorting_desc_disabled:after{
+    bottom: 0px !important;
+}
+
+#dataTableUsuariosOut_filter label, #dataTableUsuariosOut_filter input, #dataTableUsuariosOut_length label, #dataTableUsuariosOut_length select, #dataTableUsuariosIn_filter label, #dataTableUsuariosIn_filter input, #dataTableUsuariosIn_length label, #dataTableUsuariosIn_length select{
+    font-size: 12px !important;
+}
+
+.msjRequerido {
+    color: #e73d4a;
+    display: none;
+    font-size: 12px;
+}

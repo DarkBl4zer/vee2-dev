@@ -95,10 +95,10 @@ class ListasSeed extends Seeder
             array('tipo' => 'profesiones', 'tipo_valor' => 2, 'valor_numero' => 59, 'nombre' => 'ZOOTECNIA'),
 
             /* Etapas del cronograma */
-            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 1, 'nombre' => 'TAPA DE PLANECION'),
-            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 2, 'nombre' => 'TAPA DE EJECUCIÓN'),
-            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 3, 'nombre' => 'TAPA DE INFORME'),
-            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 4, 'nombre' => 'TAPA DE CIERRE'),
+            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 1, 'nombre' => 'ETAPA DE PLANEACIÓN'),
+            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 2, 'nombre' => 'ETAPA DE EJECUCIÓN'),
+            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 3, 'nombre' => 'ETAPA DE INFORME'),
+            array('tipo' => 'etapas_crono', 'tipo_valor' => 2, 'valor_numero' => 4, 'nombre' => 'ETAPA DE CIERRE'),
 
             /* Actuaciones posteriores */
             array('tipo' => 'actuaciones_posteriores', 'tipo_valor' => 2, 'valor_numero' => 1, 'nombre' => 'ACCIONES INTERNAS'),
@@ -140,6 +140,21 @@ class ListasSeed extends Seeder
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 14, 'valor_texto' => 'success', 'nombre' => 'APROBADO INFORME'),
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 15, 'valor_texto' => 'info', 'nombre' => 'ATUACION POSTERIOR'),
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 16, 'valor_texto' => 'success', 'nombre' => 'ACCION CERRADA'),
+
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 1, 'valor_texto' => 'info', 'nombre' => 'CREADO'),
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 2, 'valor_texto' => 'info', 'nombre' => 'FIRMADO DELEGADO(A)'),
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 3, 'valor_texto' => 'danger', 'nombre' => 'RECHAZADO'),
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 4, 'valor_texto' => 'info', 'nombre' => 'ACTUALIZADO'),
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 5, 'valor_texto' => 'success', 'nombre' => 'APROBADO'),
+
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 1, 'valor_texto' => 'info', 'nombre' => 'EQUIPO SELECCIONADO'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 2, 'valor_texto' => 'info', 'nombre' => 'CREADO'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 3, 'valor_texto' => 'info', 'nombre' => 'DECLARACIONES FIRMADAS'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 4, 'valor_texto' => 'info', 'nombre' => 'VIABILIDAD DELEGADO'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 5, 'valor_texto' => 'info', 'nombre' => 'MESA ENLACE'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 6, 'valor_texto' => 'danger', 'nombre' => 'RECHAZADO'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 7, 'valor_texto' => 'info', 'nombre' => 'ACTUALIZADO'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 8, 'valor_texto' => 'success', 'nombre' => 'APROBADO'),
         ];
         for ($i=0; $i < count($datos); $i++) {
             ListasModel::create($datos[$i]);

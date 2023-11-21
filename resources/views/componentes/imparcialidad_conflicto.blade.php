@@ -10,6 +10,13 @@
         </div>
         <div class="modal-body">
             <div class="container-fluid">
+                <div class="row" id="alertNoFirma0" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="alert alert-danger" role="alert">
+                            Por favor configure primero la firma <a href="/config/firma">aquí</a>
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <label for="lugar_expedicion">Lugar de expedición de cédula <sup style="color: var(--danger)">*</sup></label>
@@ -150,7 +157,7 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal" >Cerrar</button>
-            <button type="button" class="btn btn-primary" onclick="ParaFirmar();">Guardar</button>
+            <button type="button" class="btn btn-primary" onclick="ParaFirmar();">Revisar documento</button>
         </div>
         </div>
     </div>
@@ -169,17 +176,17 @@
                 <div class="container-fluid">
                     <div class="row" id="alertNoFirma" style="display: none;">
                         <div class="col-md-12">
-                            <div class="alert alert-info" role="alert">
-                                Por favor configure primero la firma <a href="/config/firma">aqui</a>
+                            <div class="alert alert-danger" role="alert">
+                                Por favor configure primero la firma <a href="/config/firma">aquí</a>
                             </div>
                         </div>
                     </div>
                     <div class="row" id="botonesFirma">
                         <div class="col-md-6">
-                            <button type="button" class="btn btn-light btn-block" onclick="GenerarVistaPrevia();"><i class="fas fa-file-pdf"></i> Vista previa</button>
+                            <button type="button" class="btn btn-light btn-block" onclick="GuardarDeclaracion(true);"><i class="fas fa-file-pdf"></i> Vista previa</button>
                         </div>
                         <div class="col-md-6">
-                            <button type="button" class="btn btn-primary btn-block" onclick="Firmar();"><i class="fas fa-signature"></i> Firmar</button>
+                            <button type="button" class="btn btn-primary btn-block" onclick="GuardarDeclaracion(false);"><i class="fas fa-signature"></i> Firmar</button>
                         </div>
                     </div>
                 </div>
@@ -187,6 +194,5 @@
         </div>
     </div>
 </div>
-
 
 <script src="{{asset('js/componentes/imparcialidad_conflicto.js')}}"></script>

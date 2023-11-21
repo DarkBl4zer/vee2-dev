@@ -20,50 +20,16 @@ Configurar Usuarios
 <!-- DataTales Example -->
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Configurar usuarios</h6>
+        <div class="row">
+            <div class="col-4">
+                <h6 class="m-0 font-weight-bold text-primary">Configurar usuarios</h6>
+            </div>
+        </div>
     </div>
     <div class="card-body" style="position: relative;">
-        <button id="btnSync" type="button" class="btn btn-sm btn-primary" onclick="ConfSyncUsuariosSinproc();" style="position: absolute; left: 250px; z-index: 100;">Actualizar funcionarios desde SINPROC</button>
+        <button id="btnSync" type="button" class="btn btn-sm btn-primary" onclick="ConfSyncUsuariosSinproc();" style="position: absolute; left: 250px; z-index: 100; display: none;">Actualizar funcionarios desde SINPROC</button>
         <div class="table-responsive">
-            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Cedula</th>
-                        <th>Nombre</th>
-                        <th>Perfiles</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($datos->usuarios as $item)
-                    <tr>
-                        <td>{{$item->cedula}}</td>
-                        <td>{{$item->nombre}}</td>
-                        <td>
-                            <i class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nuevo perfil" onclick="NuevoPerfil({{intval($item->id)}});"></i>
-                            <ul style="position: relative;">
-                            @foreach ($item->perfiles as $item2)
-                                @if (intval($item2->id_rol) == 1)
-                                <li>{{$item2->nombre_rol}} <i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar perfil" onclick="ConfirmarEliminarPerfil({{intval($item2->id_perfil)}});" style="font-size: 16px;"></i></li>
-                                @endif
-                                @if (intval($item2->id_rol) == 2)
-                                <li>{{$item2->nombre_rol}}<span style="font-size: 11px;">>>{{$item2->tipo_coord}}</span> <i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar perfil" onclick="ConfirmarEliminarPerfil({{intval($item2->id_perfil)}});" style="font-size: 16px;"></i></li>
-                                @endif
-                                @if (intval($item2->id_rol) > 2)
-                                <li>{{$item2->nombre_rol}}<span style="font-size: 11px;">>>{{$item2->nombre_delegada}}</span> <i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar perfil" onclick="ConfirmarEliminarPerfil({{intval($item2->id_perfil)}});" style="font-size: 16px;"></i></li>
-                                @endif
-                            @endforeach
-                            </ul>
-                        </td>
-                        <td class="text-center">
-                            <span style="font-weight: bold; color: var(--{{($item->activo)?"success":"danger"}});">{{($item->activo)?"Activo":"Inactivo"}}</span>
-                            <br>
-                            <i class="fas fa-play-circle" data-toggle="tooltip" data-placement="top" title="Activar usuario" onclick="ConfirmarActivar({{intval($item->id)}}, true);"></i>
-                            <i class="fas fa-pause-circle" data-toggle="tooltip" data-placement="top" title="Inactivar usuario" onclick="ConfirmarActivar({{intval($item->id)}}, false);"></i>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 14px;">
             </table>
         </div>
     </div>

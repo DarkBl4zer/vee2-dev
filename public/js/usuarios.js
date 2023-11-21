@@ -1,15 +1,72 @@
 var jsonUsuariosSP = [];
 $(document).ready(function() {
-    $('#dataTable').DataTable({
-        language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
-    });
+    ConsultarUsuarios();
     $('.select2').select2({
         theme: 'bootstrap4',
         dropdownParent: $('#addPerfilModal')
     });
-    _RQ('GET',getUsuariosVEE, {}, function(result) {$('#loading').hide();
+    _RQ('GET',getUsuariosVEE, null, function(result) {
         jsonUsuariosSP = result;
     });
+});
+
+var plantillaHTML = new PlantillaHTML();
+function ConsultarUsuarios(){
+    LimpiarTabla('dataTable');
+    _RQ('GET','/back/usuarios', null, function(result) {
+        LlenaTabla(result);
+    });
+}
+
+function LlenaTabla(datosTabla) {
+    let filas = [];
+    let columns = [
+        {title: "Cedula"},
+        {title: "Nombre"},
+        {title: "Perfiles"},
+        {title: "Estado"}
+    ];
+    datosTabla.forEach(element => {
+        let columna = [];
+        columna.push(element.cedula);
+        columna.push(element.nombre);
+        columna.push(plantillaHTML.itemPerfilesUsuario({
+            id: element.id,
+            apperfiles: element.apperfiles
+        }));
+        columna.push(plantillaHTML.itemEstadoTabla({
+            activo: element.activo,
+            id: element.id
+        }));
+        filas.push(columna);
+    });
+    dataTable = $('#dataTable').DataTable({
+        paging: true,
+        info: false,
+        columns: columns,
+        data: filas,
+        columnDefs: [
+            {targets: [0], className: "align-middle", width: "68px"},
+            {targets: [3], className: "align-middle text-center", width: "70px"},
+            {targets: '_all', className: "align-middle"}
+        ],
+        language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
+    });
+}
+
+function LimpiarTabla(idTabla) {
+    if ($.fn.DataTable.isDataTable('#'+idTabla)) {
+        var table = $('#'+idTabla).DataTable();
+        table.destroy();
+        table.clear();
+        $('#'+idTabla).empty();
+    }
+}
+
+$('#dataTable').on('draw.dt', function () {
+    $('[data-toggle="tooltip"]').tooltip();
+    $('#btnSync').show();
+    $('#loading').hide();
 });
 
 function NuevoPerfil(id){
