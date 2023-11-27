@@ -76,12 +76,12 @@
                 <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->padre->cordis:""}}</td>
                 <td style="padding-left: 5px;">{{$PTA->accion->titulo}}</td>
                 <td style="padding-left: 5px;">{{$PTA->accion->objetivo_general}}</td>
-                <td style="text-align: center;">{{$PTA->accion->fecha_plangestion}}</td>
+                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $PTA->accion->fecha_plangestion)->format('d/m/Y')}}</td>
                 <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->archivoacta->tema:""}}</td>
                 <td style="padding-left: 5px;">{!!$PTA->accion->entidades['string']!!}</td>
                 <td style="text-align: center;">{{$PTA->accion->numero_profesionales}}</td>
-                <td style="text-align: center;">{{$PTA->accion->fecha_inicio}}</td>
-                <td style="text-align: center;">{{$PTA->accion->fecha_final}}</td>
+                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $PTA->accion->fecha_inicio)->format('d/m/Y')}}</td>
+                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $PTA->accion->fecha_final)->format('d/m/Y')}}</td>
             </tr>
             @endforeach
         </table>

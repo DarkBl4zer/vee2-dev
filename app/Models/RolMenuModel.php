@@ -13,7 +13,6 @@ class RolMenuModel extends Model
     protected $fillable = [
         'id_rol',
         'id_menu',
-        'activo',
         'usuario_crea'
     ];
     protected $guarded = ['id'];

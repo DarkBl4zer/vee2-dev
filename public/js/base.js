@@ -1,3 +1,5 @@
+var plantillaHTML = new PlantillaHTML();
+
 $(document).ready(function(){
     ConsultarNotificaciones();
 });
@@ -5,21 +7,16 @@ $(document).ready(function(){
 function ConsultarNotificaciones() {
     let datos = {todo:false};
     _RQ('GET','/back/notificaciones', datos, function(result) {
-        let plantillaHTML = new PlantillaHTML();
         let html = "";
-        if (result.length == 0) {
-            $("#contNoti").html(0);
-            $("#contNoti").hide();
-        }
-        if (result.length > 0 && result.length < 10) {
-            $("#contNoti").html(result.length);
+        if (result.activas > 0 && result.activas < 10) {
+            $("#contNoti").html(result.activas);
             $("#contNoti").show();
         }
-        if (result.length > 9) {
+        if (result.activas > 9) {
             $("#contNoti").html("9+");
             $("#contNoti").show();
         }
-        result.forEach(element => {
+        result.notificaciones.forEach(element => {
             html += plantillaHTML.itemNotificacion(element);
         });
         $("#itemsNotificacion").html(html);
@@ -82,7 +79,7 @@ function Trabajo(id){
         $("#Tperfil"+id).show();
         baseTrabajo.id_perfil = id;
         let datos = {id};
-        _RQ('POST','/back/trabajo', datos, function(result) {$('#loading').hide();
+        _RQ('POST','/back/trabajo', datos, function(result) {
             _MSJ(result.tipo, result.txt, function() {
                 location.reload();
             });
@@ -91,9 +88,8 @@ function Trabajo(id){
 }
 
 function Notificacion(id, url){
-    $("#noti"+id).attr("style","display:none !important");
     let datos = {id, estado:false};
-    _RQ('POST','/back/notificacion_vista', datos, function(result) {$('#loading').hide();
+    _RQ('POST','/back/notificacion_vista', datos, function(result) {
         _MSJ(result.tipo, result.txt, function() {
             window.location.href = url;
         });
@@ -216,4 +212,16 @@ function SetCampoFecha(idx, min = false, max = false){
 	calendario.formatDate ='d.m.Y';
     jQuery.datetimepicker.setLocale('es');
     $('#'+idx).datetimepicker(calendario);
+}
+
+function DocumentosAccion(id) {
+    let datos = {id};
+    _RQ('GET','/back/documentos_accion', datos, function(result) {
+        if (result.estado) {
+            let tabla = plantillaHTML.itemsTablaDocumentos(result.data);
+            $('#bodyTablaDocumentosAccion').html(tabla);
+            Mostrar('modalDocumentos');
+            $('#loading').hide();
+        }
+    });
 }

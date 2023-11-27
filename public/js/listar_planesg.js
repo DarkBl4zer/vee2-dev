@@ -1,4 +1,7 @@
 $(document).ready(function() {
+    if(!permisos.nuevo){
+        $('#btnNuevo').remove();
+    }
     let hoy = new Date();
     SetCampoFecha('fecha_informe', hoy.toISOString().split('T')[0]);
     ConsultarPlanes();
@@ -6,10 +9,7 @@ $(document).ready(function() {
 
 var thisYear = new Date().getFullYear();
 
-var plantillaHTML = new PlantillaHTML();
 function ConsultarPlanes(){
-    DisableI('btnNuevo', false, 'Nuevo();');
-    $('#btnNuevo').hide();
     LimpiarTabla('dataTable');
     if ($('#periodo').val() != "") {
         _RQ('GET','/back/planes_gestion', null, function(result) {
@@ -29,7 +29,7 @@ function LlenaTabla(datos) {
         {title: "Acciones"}
     ];
     let targets = [5];
-    if(!puedeEditar){
+    if(!permisos.editar){
         columns = [
             {title: "#"},
             {title: "Título"},
@@ -47,11 +47,11 @@ function LlenaTabla(datos) {
         columna.push(element.accion.titulo);
         columna.push(plantillaHTML.itemEquipoPlangestion(element.declaraciones));
         columna.push(element.estado);
-        if (!puedeEditar) {
+        if (!permisos.nuevo) {
             columna.push(element.delegada);
         }
         columna.push(element.fechas);
-        if (puedeEditar) {
+        if (permisos.nuevo) {
             columna.push(plantillaHTML.itemAccionesTabla({
                 id: element.id_accion,
                 estado: element.estado,
@@ -88,10 +88,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
-    if (puedeEditar) {
-        $('#btnNuevo').show();
-    }
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     $('#loading').hide();
 });
 

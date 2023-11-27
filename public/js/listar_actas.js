@@ -1,8 +1,10 @@
 $(document).ready(function() {
+    if(!permisos.nuevo){
+        $('#btnNuevo').remove();
+    }
     ConsultarActas();
 });
 
-var plantillaHTML = new PlantillaHTML();
 function ConsultarActas(){
     $('#loading').show();
     LimpiarTabla('dataTable');
@@ -29,19 +31,14 @@ function LlenaTabla(datosTabla) {
             texto: element.nombre_archivo
         }));
         columna.push(element.creado);
-        if (puedeEditar) {
-            columna.push(plantillaHTML.itemEstadoTabla({
-                activo: element.activo,
-                id: element.id
-            }));
-            columna.push(plantillaHTML.itemAccionesTabla({
-                id: element.id,
-                reemplazar: true
-            }));
-        } else {
-            columna.push('');
-            columna.push('');
-        }
+        columna.push(plantillaHTML.itemEstadoTabla({
+            activo: element.activo,
+            id: element.id
+        }));
+        columna.push(plantillaHTML.itemAccionesTabla({
+            id: element.id,
+            reemplazar: true
+        }));
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -67,7 +64,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     $('#btnNuevo').show();
     $('#loading').hide();
 });

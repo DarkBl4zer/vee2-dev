@@ -35,9 +35,7 @@ Planes de gestión
         </div>
     </div>
     <div class="card-body" style="position: relative;">
-        @if ($permiteNueva)
-        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nueva acta" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
-        @endif
+        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nuevo plan de gestón" onclick="Nuevo();" style="font-size: 24px; cursor: pointer;"></i>
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 13px;">
             </table>
@@ -102,8 +100,6 @@ Planes de gestión
     </div>
 </div>
 
-@include('componentes.ver_accion')
-
 @include('componentes.nuevo_plangestion')
 
 <!-- Modal -->
@@ -142,9 +138,6 @@ Planes de gestión
 
 @endsection
 @section('Xscripts')
-    <script>
-        var puedeEditar = {{($permiteNueva)?'true':'false'}};
-    </script>
     <!-- Page level plugins -->
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
@@ -155,4 +148,5 @@ Planes de gestión
     <script src="{{asset('vendor/summernote/lang/summernote-es-ES.js')}}"></script>
     <!-- Page level custom scripts -->
     <script src="{{asset('js/listar_planesg.js')}}"></script>
+    <script src="{{asset('vendor/bootstrap/js/bs-custom-file-input.min.js')}}"></script>
 @endsection

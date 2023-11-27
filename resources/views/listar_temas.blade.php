@@ -26,19 +26,17 @@ Listar Temas
                 <div class="form-group" style="margin-top: 20px;">
                     <label for="tipoTema">Tipo de tema <sup style="color: var(--danger)">*</sup></label>
                     <select class="form-control select2" id="tipoTema" name="tipoTema" onchange="ConsultarTemas();" style="font-size: 14px;">
-                        <option value="">...</option>
                         <option value="1">PRINCIPALES</option>
                         <option value="2">SECUNDARIOS</option>
                     </select>
                 </div>
             </div>
-            <div class="col-3 offset-md-4" style="padding-top: 27px;">
-                @if ($permiteNueva)
-                <a href="/files/PLANTILLA_CARGA.xlsx" target="_blank">
-                    <i class="fas fa-file-excel" style="font-size: 30px; color: var(--success);"></i> Plantilla carga masiva
-                </a>
-                <br>
-                <div class="input-group" style="margin-top: 10px;">
+            <div class="col-4"></div>
+            <div class="col-1 text-right masiva" style="padding-top: 62px;">
+                <a class="fas fa-file-excel" href="/files/PLANTILLA_CARGA.xlsx" target="_blank" data-toggle="tooltip" data-placement="top" title="Plantilla carga masiva" style="font-size: 30px; color: var(--success);"></a>
+            </div>
+            <div class="col-2 masiva" style="padding-top: 62px;">
+                <div class="input-group">
                     <div class="custom-file">
                         <form id="formCargaMasiva" method="post" enctype="multipart/form-data">
                             <input type="file" class="custom-file-input" id="inputCargaMasiva" name="inputCargaMasiva" aria-describedby="inputGroupCargaMasiva" accept=".xlsx" onchange="RemoveInvalid(this.id);">
@@ -46,19 +44,14 @@ Listar Temas
                         </form>
                     </div>
                 </div>
-                @endif
             </div>
-            <div class="col-1">
-                @if ($permiteNueva)
-                <i class="fas fa-file-upload" style="font-size: 30px; margin-top: 72px; cursor:pointer;" onclick="ConfirmarCargaMasiva();"></i> <span style="cursor:pointer;" onclick="ConfirmarCargaMasiva();">Cargar</span>
-                @endif
+            <div class="col-1 text-left masiva" style="padding-top: 62px;">
+                <i class="fas fa-file-upload" style="font-size: 30px; cursor:pointer;" onclick="ConfirmarCargaMasiva();" data-toggle="tooltip" data-placement="top" title="Cargar"></i>
             </div>
         </div>
     </div>
     <div class="card-body" style="position: relative;">
-        @if ($permiteNueva)
         <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nuevo tema" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
-        @endif
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 14px;">
             </table>
@@ -91,9 +84,6 @@ Listar Temas
 
 @endsection
 @section('Xscripts')
-    <script>
-        var puedeEditar = {{($permiteNueva)?'true':'false'}};
-    </script>
     <!-- Page level plugins -->
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>

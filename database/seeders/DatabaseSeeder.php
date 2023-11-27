@@ -1,7 +1,7 @@
 <?php
 
 namespace Database\Seeders;
-date_default_timezone_set('America/Bogota');
+
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -24,5 +24,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ListasSeed::class);
         $this->call(EntidadesSeed::class);
         $this->call(DelegadaEntidadSeed::class);
+        $this->call(PermisosSeed::class);
     }
 }

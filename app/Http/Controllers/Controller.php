@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AuditoriaModel;
 use App\Models\ConfiguracionesModel;
+use App\Models\PerfilesModel;
+use App\Models\UsuarioNotificacionModel;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -52,17 +53,6 @@ class Controller extends BaseController
         }
     }
 
-    public function Auditoria($id_usuario, $tipo, $modelo, $id_modelo, $old, $new){
-        AuditoriaModel::create(array(
-            'id_usuario' => $id_usuario,
-            'tipo' => $tipo,
-            'modelo' => $modelo,
-            'id_modelo' => $id_modelo,
-            'old_json' => ($old != null)?json_encode($old, JSON_UNESCAPED_UNICODE):null,
-            'new_json' => json_encode($new, JSON_UNESCAPED_UNICODE)
-        ));
-    }
-
     public function ImagenFirma($firma){
         if (Storage::disk('local')->exists('/vee2_firmas/'.$firma)) {
             $path = storage_path().'/app/vee2_firmas/'.$firma;
@@ -76,4 +66,50 @@ class Controller extends BaseController
             return 'data:image/'.$noFirmaT.';base64,'.base64_encode($noFirmaD);
         }
     }
+
+    public function PermisosPorPagina($url) {
+        $permisos = (object)Session::get('PermisosVee');
+        $arrP = array();
+        foreach ($permisos->rol as $permiso) {
+            if($permiso->url == $url){
+                if (is_null($permiso->estados)) {
+                    array_push($arrP, $permiso->accion.": true");
+                } else{
+                    array_push($arrP, $permiso->accion.": ".$permiso->estados);
+                }
+            }
+        }
+        foreach ($permisos->usuario as $permiso) {
+            if($permiso->url == $url){
+                if (is_null($permiso->estados)) {
+                    array_push($arrP, $permiso->accion.": true");
+                } else{
+                    array_push($arrP, $permiso->accion.": ".$permiso->estados);
+                }
+            }
+        }
+        return "{".implode(", ", $arrP)."}";
+    }
+
+    public function Notificar($noti){
+        $sesion = (object)Session::get('UsuarioVee');
+        $delegada = (isset($noti->id_delegada))?$noti->id_delegada:$sesion->trabajo->id_delegada;
+        if ($noti->para == 'Coordinador') {
+            $tipoCoord = ($sesion->trabajo->tipo_delegada == 1)?"PD":"LOCALES";
+            $perfiles = PerfilesModel::where('id_rol', 2)->where('activo', true)->where('tipo_coord', $tipoCoord)->get();
+        }
+        if ($noti->para == 'Delegado') {
+            $perfiles = PerfilesModel::where('id_rol', 3)->where('activo', true)->where('id_delegada', $delegada)->get();
+        }
+        foreach ($perfiles as $item) {
+            UsuarioNotificacionModel::create(array(
+                'id_usuario' => $item->id_usuario,
+                'id_perfil' => $item->id,
+                'tipo' => $noti->tipo,
+                'texto' => $noti->texto,
+                'url' => $noti->url
+            ));
+        }
+    }
+
 }

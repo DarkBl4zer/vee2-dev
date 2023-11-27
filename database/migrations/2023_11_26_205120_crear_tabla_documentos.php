@@ -11,14 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vee2_auditoria', function (Blueprint $table) {
+        Schema::create('vee2_documentos', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_accion');
+            $table->integer('n_tipo');
+            $table->string('t_tipo', 255);
+            $table->string('carpeta', 255);
+            $table->string('archivo', 255);
+            $table->string('n_original', 255);
+            $table->string('fecha', 255);
+            $table->string('usuario', 255);
             $table->unsignedBigInteger('id_usuario');
-            $table->string('tipo', 100);
-            $table->string('modelo', 255);
-            $table->unsignedBigInteger('id_modelo');
-            $table->string('old_json', 4000)->nullable();
-            $table->string('new_json', 4000);
             $table->timestamps();
         });
     }
@@ -28,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vee2_auditoria');
+        Schema::dropIfExists('vee2_documentos');
     }
 };

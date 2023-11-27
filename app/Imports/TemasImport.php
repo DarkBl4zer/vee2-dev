@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-date_default_timezone_set('America/Bogota');
+
 
 use App\Models\ActasModel;
 use App\Models\TemasPModel;

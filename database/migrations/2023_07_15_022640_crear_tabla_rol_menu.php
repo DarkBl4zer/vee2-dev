@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_rol');
             $table->unsignedBigInteger('id_menu');
-            $table->boolean('activo')->default(true);
             $table->unsignedInteger('usuario_crea')->default(1010);
             $table->timestamps();
         });

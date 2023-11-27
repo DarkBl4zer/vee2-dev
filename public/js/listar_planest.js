@@ -1,10 +1,13 @@
 $(document).ready(function() {
+    if(!permisos.nuevo){
+        $('#btnNuevo').remove();
+    }
+    bsCustomFileInput.init();
     ConsultarPlanes();
 });
 
 var thisYear = new Date().getFullYear();
 
-var plantillaHTML = new PlantillaHTML();
 function ConsultarPlanes(){
     if (thisYear == $('#periodo').val()) {
         ppEditar = true;
@@ -24,7 +27,6 @@ function ConsultarPlanes(){
 
 var maxVersion = 0;
 function LlenaTabla(datos) {
-    console.log(datos);
     let filas = [];
     let columns = [
         {title: "#"},
@@ -33,7 +35,7 @@ function LlenaTabla(datos) {
         {title: "Acciones"}
     ];
     let targets = [3];
-    if(!puedeEditar){
+    if(!permisos.nuevo){
         columns = [
             {title: "#"},
             {title: "Acción(es)"},
@@ -47,17 +49,22 @@ function LlenaTabla(datos) {
         let columna = [];
         columna.push(element.year+'-'+element.version+'<br>'+element.nombreestado);
         columna.push(element.str_acciones);
-        if (!puedeEditar) {
+        if (!permisos.nuevo) {
             columna.push(element.delegada.nombre);
         }
         columna.push(element.fechas);
-        if (puedeEditar && ppEditar) {
+        let editar = false;
+        if(ppEditar && permisos.editar && permisos.editar.includes(parseInt(element.estado))){
+            editar = true;
+        }
+        if (ppEditar) {
             columna.push(plantillaHTML.itemAccionesTabla({
                 id: element.id,
                 estado: element.estado,
                 archivo: element.archivo_firmado,
-                editar: true,
-                generar: true
+                editar: editar,
+                generar: true,
+                aprobar: true
             }));
         } else{
             columna.push('');
@@ -88,7 +95,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('td i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     if (ppEditar) {
         $('#btnNuevo').show();
     }
@@ -120,15 +127,17 @@ function LlenaTablaAcciones(datos) {
         {title: "Entidad(es)"}
     ];
     datos.forEach(element => {
-        let columna = [];
-        columna.push(plantillaHTML.itemCheckbox({
-            id: element.id,
-            checked: element.checked
-        }));
-        columna.push(element.numero);
-        columna.push(element.titulo.substring(0, 150)+' (...)');
-        columna.push(element.entidades.string);
-        filas.push(columna);
+        if (element.estado == 2 || element.estado == 4 || element.estado == 7) {
+            let columna = [];
+            columna.push(plantillaHTML.itemCheckbox({
+                id: element.id,
+                checked: element.checked
+            }));
+            columna.push(element.numero);
+            columna.push(element.titulo.substring(0, 150)+' (...)');
+            columna.push(element.entidades.string);
+            filas.push(columna);
+        }
     });
     dataTableAcciones = $('#dataTableAcciones').DataTable({
         paging: true,
@@ -212,17 +221,48 @@ function FirmarPlanT(previa) {
     if (previa) {
         window.open('/back/previa_plantrabajo?id='+$('#idCreaEdita').val(), '_blank');
     } else {
-        let datos = {
-            id: $('#idCreaEdita').val()
-        };
-        _RQ('POST','/back/firmar_plantrabajo', datos, function(result) {
-            _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
-                location.reload();
-            });
-        });
+        if (ValidarCampo('inputActa')) {
+            let datos = new FormData(document.getElementById('formActa'));
+            datos.append('id', $('#idCreaEdita').val());
+            _RQ('POST','/back/firmar_plantrabajo_d', datos, function(result) {
+                _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+                    location.reload();
+                });
+            }, true);
+        }
     }
 }
 
 function VerFirmado(archivo) {
     window.open('/back/descargar_archivo/?carpeta=vee2_generados&archivo='+archivo, '_blank');
+}
+
+function ConfirmarAprobar(id){
+    $('#idCreaEdita').val(id);
+    Mostrar('modalAprobar');
+}
+
+function AprobarPT(respuesta){
+    $('#apruebaPTSi').removeClass('btn-primary');
+    $('#apruebaPTSi').addClass('btn-secondary');
+    $('#apruebaPTNo').removeClass('btn-primary');
+    $('#apruebaPTNo').addClass('btn-secondary');
+    $('#apruebaPT'+respuesta).removeClass('btn-secondary');
+    $('#apruebaPT'+respuesta).addClass('btn-primary');
+    if (respuesta == 'Si') {
+        $('#apruebaBotonesFirma').show();
+    } else {
+        $('#apruebaBotonesFirma').hide();
+    }
+}
+
+function FirmarCoorPlanT() {
+    let datos = {
+        id: $('#idCreaEdita').val()
+    };
+    _RQ('POST','/back/firmar_plantrabajo_c', datos, function(result) {
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+            location.reload();
+        });
+    });
 }

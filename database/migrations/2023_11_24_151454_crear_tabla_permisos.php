@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vee2_rol_submenu', function (Blueprint $table) {
+        Schema::create('vee2_permisos', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_rol');
-            $table->unsignedBigInteger('id_submenu');
-            $table->boolean('editar')->default(true);
-            $table->unsignedInteger('usuario_crea')->default(1010);
+            $table->string('url', 250);
+            $table->string('accion', 150);
+            $table->unsignedBigInteger('id_rol')->nullable();
+            $table->unsignedBigInteger('id_usuario')->nullable();
+            $table->string('estados', 255)->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vee2_rol_submenu');
+        Schema::dropIfExists('vee2_permisos');
     }
 };

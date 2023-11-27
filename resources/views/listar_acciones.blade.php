@@ -36,9 +36,7 @@ Acciones de prevención y control
         </div>
     </div>
     <div class="card-body" style="position: relative;">
-        @if ($permiteNueva)
-        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nueva acta" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
-        @endif
+        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nueva acción" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 13px;">
             </table>
@@ -128,7 +126,7 @@ Acciones de prevención y control
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="numero_profesionales"># Profesionales <sup style="color: var(--danger)">*</sup></label>
-                            <input type="number" class="form-control" id="numero_profesionales">
+                            <input type="number" class="form-control" min="1" id="numero_profesionales">
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -181,6 +179,41 @@ Acciones de prevención y control
     </div>
 </div>
 
+<!-- Modal Detalle Accion-->
+<div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-labelledby="modalDetalleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetalleLabel">Detalle acción</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <table id="tablaDetalle" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Campo</th>
+                                    <th scope="col">Dato registrado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyTablaDetalle">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" >Cerrar</button>
+        </div>
+      </div>
+    </div>
+</div>
+
 <input type="hidden" id="idCreaEdita" value="0">
 
 @include('componentes.imparcialidad_conflicto', ['profesiones' => $profesiones, 'cargos' => $cargos])
@@ -188,7 +221,6 @@ Acciones de prevención y control
 @endsection
 @section('Xscripts')
     <script>
-        var puedeEditar = {{($permiteNueva)?'true':'false'}};
         var ppEditar = true;
     </script>
     <!-- Page level plugins -->

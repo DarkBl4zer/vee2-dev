@@ -10,7 +10,6 @@ $(document).ready(function() {
     });
 });
 
-var plantillaHTML = new PlantillaHTML();
 function ConsultarUsuarios(){
     LimpiarTabla('dataTable');
     _RQ('GET','/back/usuarios', null, function(result) {
@@ -64,7 +63,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     $('#btnSync').show();
     $('#loading').hide();
 });

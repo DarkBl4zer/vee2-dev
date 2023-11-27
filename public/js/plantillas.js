@@ -8,7 +8,7 @@ class PlantillaHTML{
                     </div>
                     <div>
                         <div class="small text-gray-500">${data.creado}</div>
-                        <span class="font-weight-bold">${data.texto}</span>
+                        <span ${(data.activo=='1')?'class="font-weight-bold"':''}>${data.texto}</span>
                     </div>
                 </a>`;
     }
@@ -19,18 +19,26 @@ class PlantillaHTML{
     }
 
     itemEstadoTabla(data){
-        return `<span style="font-weight: bold; color: var(--${(data.activo=='1')?"success":"danger"});">${(data.activo=='1')?"Activo":"Inactivo"}</span>
-        <br>
-        <i class="fas fa-play-circle" data-toggle="tooltip" data-placement="top" title="Activar" onclick="ConfirmarActivar(${data.id}, true);"></i>
-        <i class="fas fa-pause-circle" data-toggle="tooltip" data-placement="top" title="Inactivar" onclick="ConfirmarActivar(${data.id}, false);"></i>`;
+        let html = `<span style="font-weight: bold; color: var(--${(data.activo=='1')?"success":"danger"});">${(data.activo=='1')?"Activo":"Inactivo"}</span><br>`;
+        if (permisos.activar) {
+            html = html + `<i class="fas fa-play-circle" data-toggle="tooltip" data-placement="top" title="Activar" onclick="ConfirmarActivar(${data.id}, true);"></i>
+            <i class="fas fa-pause-circle" data-toggle="tooltip" data-placement="top" title="Inactivar" onclick="ConfirmarActivar(${data.id}, false);"></i>`;
+        }
+        return html;
     }
 
     itemAccionesTabla(data){
         let html = "";
-        if (data.editar) {
+        if (data.documentos) {
+            html += `<i class="fas fa-stamp" data-toggle="tooltip" data-placement="top" title="Documentos" onclick="DocumentosAccion(${data.id_accion});"></i>`;
+        }
+        if (data.detalle) {
+            html += `<i class="fas fa-file-invoice" data-toggle="tooltip" data-placement="top" title="Ver detalle" onclick="VerDetalle(${data.id});"></i>`;
+        }
+        if (data.editar && permisos.editar) {
             html += `<i class="fas fa-edit" data-toggle="tooltip" data-placement="top" title="Editar" onclick="Editar(${data.id});"></i>`;
         }
-        if (data.reemplazar) {
+        if (data.reemplazar && permisos.reemplazar) {
             html += `<i class="fas fa-clone" data-toggle="tooltip" data-placement="top" title="Reemplazar" onclick="Reemplazar(${data.id});"></i>`;
         }
         if (data.eliminar) {
@@ -39,15 +47,15 @@ class PlantillaHTML{
         if (data.guardar) {
             html += `<i class="fas fa-save inputFila${data.id}" data-toggle="tooltip" data-placement="top" title="Guardar" onclick="ConfirmarGuardar(${data.id});"></i>`;
         }
-        if (data.conflicto) {
-            if (data.estado == 1 || data.estado == 3) {
+        if (data.conflicto && permisos.conflicto) {
+            if (data.estado == 1) {
                 html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearDeclaracion(${data.id});"></i>`;
             } else{
                 html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerDeclaracion(${data.id}, ${data.estado}, '${data.dec_firmada}');"></i>`;
             }
         }
         if (data.generar) {
-            if (data.estado == 1 || data.estado == 3) {
+            if (data.estado == 1) {
                 html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Generar/Firmar" onclick="GenerarFirmar(${data.id});"></i>`;
             } else{
                 html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Ver firmado" onclick="VerFirmado('${data.archivo}');"></i>`;
@@ -58,6 +66,11 @@ class PlantillaHTML{
         }
         if (data.next) {
             html += `<i class="fas fa-forward" data-toggle="tooltip" data-placement="top" title="Siguiente" onclick="Siguiente(${data.id});"></i>`;
+        }
+        if (data.aprobar) {
+            if (permisos.aprobar && permisos.aprobar.includes(parseInt(data.estado))) {
+                html += `<i class="fas fa-tasks" data-toggle="tooltip" data-placement="top" title="Aprobar/Rechazar" onclick="ConfirmarAprobar(${data.id});"></i>`;
+            }
         }
         return html;
     }
@@ -133,6 +146,37 @@ class PlantillaHTML{
     itemTablaActividadesCronograma(data){
         let html = '<tr id="trActividad_'+index+'"><td style="text-align: left;">'+$('#cron_actividad').val()+'</td><td>'+nombreEtapa+'</td><td class="text-center"><i class="fas fa-trash-alt" onclick="EliminarActividad('+index+');" style="font-size: 18px;"></i></td></tr>';
         $('#bodyTablaActividades').append(html);
+    }
+
+    itemsTablaDocumentos(data){
+        let html = '';
+        data.forEach(element => {
+            html += `<tr>
+                <td>${element.id}</td>
+                <td>${element.t_tipo}</td>
+                <td>${element.fecha}</td>
+                <td>${element.usuario}</td>
+                <td style="text-align: left;"><a href="/back/descargar_archivo/?carpeta=${element.carpeta}&archivo=${element.archivo}" target="_blank">${element.n_original}</a></td>
+            </tr>`;
+        });
+        return html;
+    }
+
+    itemsTablaDetalleAccion(data){
+        return `
+        <tr><td>Número</td><td>${data.numero}</td></tr>
+        <tr><td>Tipo de actuación</td><td>${data.actuacion}</td></tr>
+        <tr><td>Acción para seguimiento</td><td>${data.padre}</td></tr>
+        <tr><td>Tema principal</td><td>${(data.archivoacta.padre != null)?data.archivoacta.padre:data.archivoacta.tema}</td></tr>
+        <tr><td>Tema secundario</td><td>${(data.archivoacta.padre != null)?data.archivoacta.tema:''}</td></tr>
+        <tr><td>Título</td><td>${data.titulo}</td></tr>
+        <tr><td>Objetivo general</td><td>${data.objetivo_general}</td></tr>
+        <tr><td>Entidad(s)</td><td>${data.entidades.string}</td></tr>
+        <tr><td># Profesionales</td><td>${data.numero_profesionales}</td></tr>
+        <tr><td>Fecha plan de gestión</td><td>${data.fecha_plangestion.substring(0, 10).split('-').reverse().join('/')}</td></tr>
+        <tr><td>Fecha inicio acción</td><td>${data.fecha_inicio.substring(0, 10).split('-').reverse().join('/')}</td></tr>
+        <tr><td>Fecha fin acción</td><td>${data.fecha_final.substring(0, 10).split('-').reverse().join('/')}</td></tr>
+        `;
     }
 
 }

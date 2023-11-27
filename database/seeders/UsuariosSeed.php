@@ -1,9 +1,8 @@
 <?php
 
 namespace Database\Seeders;
-date_default_timezone_set('America/Bogota');
+
 use App\Models\UsuariosModel;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UsuariosSeed extends Seeder

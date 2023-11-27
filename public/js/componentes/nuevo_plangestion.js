@@ -80,7 +80,6 @@ function MostrarTextarea(num){
         };
         _RQ('POST','/back/obtener_cronograma', datos, function(result) {
             actividadesCreadas = result;
-            console.log(result);
             $('#paso'+num).show();
             $('#loading').hide();
         });
@@ -234,7 +233,6 @@ function GuardarPaso(){
             $('#Mcronograma').hide();
         }
         if(valido){
-            console.log(actividadesCreadas);
             let datos = {
                 id: $('#idCreaEdita').val(),
                 cronograma: actividadesCreadas

@@ -19,12 +19,10 @@ class RolesModel extends Model
 
     public function usuarios(): BelongsToMany {
         return $this->belongsToMany(UsuariosModel::class, 'vee2_usuario_rol', 'id_rol', 'id_usuario')
-                    ->where('vee2_usuario_rol.activo', true)
                     ->orderBy('vee2_usuarios.nombre', 'asc');
     }
     public function menus(): BelongsToMany {
         return $this->belongsToMany(MenusModel::class, 'vee2_rol_menu', 'id_rol', 'id_menu')
-                    ->where('vee2_rol_menu.activo', true)
                     ->orderBy('vee2_menus.orden', 'asc');
     }
 }

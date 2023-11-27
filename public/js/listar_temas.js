@@ -1,9 +1,15 @@
 $(document).ready(function() {
+    if(!permisos.nuevo){
+        $('#btnNuevo').remove();
+    }
+    if(!permisos.masiva){
+        $('.masiva').remove();
+    }
     bsCustomFileInput.init();
     $('#loading').hide();
+    ConsultarTemas();
 });
 
-var plantillaHTML = new PlantillaHTML();
 var datosTabla, dataTable;
 datosTabla = dataTable = null;
 
@@ -88,7 +94,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     datosTabla.forEach(element => {
         $('#selectActa'+element.id).val(element.id_acta);
         $('#selectTemasP'+element.id).val(element.id_padre);

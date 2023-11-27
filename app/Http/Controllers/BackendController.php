@@ -1,15 +1,18 @@
 <?php
 
 namespace App\Http\Controllers;
-date_default_timezone_set('America/Bogota');
 
 use App\Imports\TemasImport;
+use App\Models\AccionesModel;
 use App\Models\ActasModel;
+use App\Models\DocumentosModel;
 use App\Models\FestivosModel;
 use App\Models\FirmasModel;
 use App\Models\ListasModel;
 use App\Models\PerfilesModel;
+use App\Models\PermisosModel;
 use App\Models\PlanesGestionModel;
+use App\Models\PlanesTrabajoModel;
 use App\Models\RolesModel;
 use App\Models\RolSubMenuModel;
 use App\Models\TemasPModel;
@@ -25,57 +28,21 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
 
 class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        $date = Carbon::now()->format('YmdHis');
-        $plangestion = PlanesGestionModel::where('id', 1)->first();
-        $funcionarios = array();
-        foreach ($plangestion->declaraciones as $item) {
-            if ($item['firmado']) {
-                $item['base64Firma'] = $this->ImagenFirma($item['firma']);
-            } else{
-                $item['base64Firma'] = "";
-            }
-            array_push($funcionarios, $item);
-        }
-
-        $datos = (object)array(
-            'delegado_nombre' => $sesion->nombre,
-            'delegado_firma' => $this->ImagenFirma($sesion->firma),
-            'delegado_fecha' => Carbon::now()->format('d/m/Y'),
-            'delegado_empleo' => 'Empleo',
-            'coordinador_nombre' => 'Coordinador',
-            'coordinador_firma' => $this->ImagenFirma("Firma"),
-            'coordinador_fecha' => 'Fecha',
-            'coordinador_empleo' => 'Empleo',
+        $plantrabajo = PlanesTrabajoModel::where('id', 1)->first();
+        $noti = (object)array(
+            'para' => 'Delegado',
+            'id_delegada' => $plantrabajo->id_delegada,
+            'tipo' => 'success',
+            'texto' => 'Plan de trabajo aprobado',
+            'url' => '/planest/listar'
         );
-
-        //return view('pdfs.plangestion', compact('plangestion', 'funcionarios'));
-        $pdf_pg = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true, 'isPhpEnabled' => true])->loadView('pdfs.plangestion', compact('plangestion', 'funcionarios', 'datos'));
-        $pdf_pg->setPaper("letter", 'portrait');
-        $pdf_pg->output();
-        $dom_pdf_pg = $pdf_pg->getDomPDF();
-        $canvas_pg = $dom_pdf_pg->get_canvas();
-        $canvas_pg->page_text(500, 51, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
-        //return $pdf_pg->stream();
-        $archivoPG = 'PG_1_'.$date.'.pdf';
-        $pdf_pg->save(storage_path().'/app/vee2_temp/'.$archivoPG);
-
-        $cronograma = $plangestion->cronograma;
-        $pdf_cron = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadView('pdfs.cronograma', compact('cronograma', 'funcionarios', 'datos'));
-        $pdf_cron->setPaper("A3", 'landscape');
-        $pdf_cron->output();
-        $dom_pdf_cron = $pdf_cron->getDomPDF();
-        $canvas_cron = $dom_pdf_cron->get_canvas();
-        $canvas_cron->page_text(1080, 62, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
-        //return $pdf_cron->stream();
-        $archivoCRON = 'CRON_1_'.$date.'.pdf';
-        $pdf_cron->save(storage_path().'/app/vee2_temp/'.$archivoCRON);
-
-
+        return $this->Notificar($noti);
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
@@ -104,11 +71,18 @@ class BackendController extends Controller
                         "id_perfil" => $usuario->perfiles[0]->id,
                         "id_rol" => $usuario->perfiles[0]->id_rol,
                         "id_delegada" => $usuario->perfiles[0]->id_delegada,
+                        "tipo_delegada" => (isset($usuario->perfiles[0]->delegada))?$usuario->perfiles[0]->delegada->tipo:null,
+                        "tipo_coord" => $usuario->perfiles[0]->tipo_coord
                     ),
                     "menu" => $this->MenusPorRol($usuario->perfiles[0]->rol->id)
                 );
                 //return $sesion;
                 Session::put('UsuarioVee', $sesion);
+                $permisos = array(
+                    'rol' => PermisosModel::select('url', 'accion', 'estados')->where('id_rol', $usuario->perfiles[0]->id_rol)->get(),
+                    'usuario' => PermisosModel::select('url', 'accion', 'estados')->where('id_usuario', $usuario->id)->get(),
+                );
+                Session::put('PermisosVee', $permisos);
                 return Redirect::to(route('inicio'));
             }
         }
@@ -123,15 +97,18 @@ class BackendController extends Controller
             $sesion->trabajo->id_perfil = $request->id;
             $sesion->trabajo->id_rol = $perfil->id_rol;
             $sesion->trabajo->id_delegada = $perfil->id_delegada;
+            $sesion->trabajo->tipo_delegada = (isset($perfil->delegada))?$perfil->delegada->tipo:null;
+            $sesion->trabajo->tipo_coord = $perfil->tipo_coord;
             $sesion->menu = $this->MenusPorRol($perfil->id_rol);
             Session::put('UsuarioVee', $sesion);
+            $permisos = array(
+                'rol' => PermisosModel::select('url', 'accion', 'estados')->where('id_rol', $perfil->id_rol)->get(),
+                'usuario' => PermisosModel::select('url', 'accion', 'estados')->where('id_usuario', $sesion->id)->get(),
+            );
+            Session::put('PermisosVee', $permisos);
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -142,26 +119,27 @@ class BackendController extends Controller
                                                         ->where('eliminado', false)
                                                         ->where('id_perfil', $sesion->trabajo->id_perfil)
                                                         ->orderBy('created_at', 'desc')->get();
+            $activas = $notificaciones->where('activo', true)->count();
         } else{
             $notificaciones = UsuarioNotificacionModel::where('id_usuario', $sesion->id)
                                                         ->where('eliminado', false)
                                                         ->where('id_perfil', $sesion->trabajo->id_perfil)
                                                         ->where('activo', true)
                                                         ->orderBy('created_at', 'desc')->get();
+            $activas = $notificaciones->where('activo', true)->count();
         }
-        return response()->json($notificaciones);
+        return response()->json(array(
+            'notificaciones' => $notificaciones,
+            'activas' => $activas
+        ));
     }
 
     public function NotificacionesVista(Request $request){
         try {
-            UsuarioNotificacionModel::where('id', $request->id)->update(array("activo" => $request->estado));
+            UsuarioNotificacionModel::where('id', $request->id)->update(array('activo' => $request->estado));
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -172,7 +150,7 @@ class BackendController extends Controller
             $tempSubMenu = array();
             if ($item->tipo == "MENU") {
                 foreach ($item->submenus as $item2) {
-                    $cont = RolSubMenuModel::where('id_rol', $rol)->where('id_submenu', $item2->id)->where('activo', true)->count();
+                    $cont = RolSubMenuModel::where('id_rol', $rol)->where('id_submenu', $item2->id)->count();
                     if ($cont > 0) {
                         $arrSub = array(
                             'nombre' => $item2->nombre,
@@ -203,11 +181,7 @@ class BackendController extends Controller
             UsuarioNotificacionModel::where('id', $request->id)->update(array("activo" => false, "eliminado" => true));
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -231,57 +205,35 @@ class BackendController extends Controller
                 ));
             } else {
                 $sesion = (object)$request->sesion;
-                $new = array(
+                PerfilesModel::create(array(
                     'id_usuario' => $request->id,
                     'id_rol' => $request->rol,
                     'id_delegada' => $request->delegada,
                     'tipo_coord' => $request->tipo,
                     'usuario_crea' => $sesion->cedula
-                );
-                $idModelo = PerfilesModel::create($new)->id;
-                $this->Auditoria($sesion->id, "INSERT", "PerfilesModel", $idModelo, null, $new);
+                ));
                 return $this->MsjRespuesta(true);
             }
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
     public function EliminarPerfil(Request $request){
         try {
-            $sesion = (object)$request->sesion;
-            $old = PerfilesModel::where('id', $request->id)->first();
-            $new = array('activo' => false);
-            PerfilesModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "DELETE", "PerfilesModel", $request->id, $old, $new);
+            PerfilesModel::where('id', $request->id)->update(array('activo' => false));
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
     public function ActivarUsuario(Request $request){
         try {
-            $sesion = (object)$request->sesion;
-            $old = UsuariosModel::where('id', $request->id)->first();
-            $new = array('activo' => $request->activar);
-            UsuariosModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "UPDATE", "UsuariosModel", $request->id, $old, $new);
+            UsuariosModel::where('id', $request->id)->update(array('activo' => $request->activar));
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -317,11 +269,7 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -343,22 +291,20 @@ class BackendController extends Controller
                         FirmasModel::where('id_usuario', $sesion->id)->update(array('activo' => false));
                     }
                     $request->file('inputFirma')->storeAs('vee2_firmas', 'inp_'.$date.'.'.$request->file('inputFirma')->extension());
-                    $firma = array(
+                    FirmasModel::create(array(
                         'id_usuario' => $sesion->id,
                         'inp_firma' => 'inp_'.$date.'.'.$request->file('inputFirma')->extension(),
                         'cnv_firma' => 'cnv_'.$date.'.'.$extension,
                         'escala' => $request->escalaFirma
-                    );
-                    $idModelo = FirmasModel::create($firma)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "FirmasModel", $idModelo, null, $firma);
+                    ));
                     $XSesion = (object)Session::get('UsuarioVee');
                     $XSesion->firma = "cnv_".$date.".".$extension;
                     Session::put('UsuarioVee', $XSesion);
                 } else{
-                    $old = $firmas[0];
-                    $new = array('cnv_firma' => 'cnv_'.$date.'.'.$extension, 'escala' => $request->escalaFirma);
-                    FirmasModel::where('id', $firmas[0]->id)->update($new);
-                    $this->Auditoria($sesion->id, "UPDATE", "FirmasModel", $firmas[0]->id, $old, $new);
+                    FirmasModel::where('id', $firmas[0]->id)->update(array(
+                        'cnv_firma' => 'cnv_'.$date.'.'.$extension,
+                        'escala' => $request->escalaFirma)
+                    );
                     $XSesion = (object)Session::get('UsuarioVee');
                     $XSesion->firma = "cnv_".$date.".".$extension;
                     Session::put('UsuarioVee', $XSesion);
@@ -370,11 +316,7 @@ class BackendController extends Controller
             }
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -384,11 +326,7 @@ class BackendController extends Controller
             $datos = ListasModel::where('tipo', $request->valor)->get();
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -402,9 +340,7 @@ class BackendController extends Controller
             ($request->valor_numero!=null)?$new["valor_numero"]=$request->valor_numero:null;
             ($request->tipo_valor!=null)?$new["tipo_valor"]=$request->tipo_valor:null;
             if ($request->id != 0) {
-                $old = ListasModel::where('id', $request->id)->first();
                 ListasModel::where('id', $request->id)->update($new);
-                $this->Auditoria($sesion->id, "UPDATE", "ListasModel", $request->id, $old, $new);
             } else{
                 $cont = 0;
                 if ($request->tipo_valor == 2) {
@@ -415,8 +351,7 @@ class BackendController extends Controller
                 }
                 if ($cont == 0) {
                     $new["tipo"] = $request->tipo;
-                    $idModelo = ListasModel::create($new)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "ListasModel", $idModelo, null, $new);
+                    ListasModel::create($new);
                 } else{
                     DB::rollBack();
                     return $this->MsjRespuesta(false, "El valor para este item ya se encuentra registrado.", 200);
@@ -426,11 +361,7 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -438,19 +369,12 @@ class BackendController extends Controller
         DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
-            $old = ListasModel::where('id', $request->id)->first();
-            $new = array('activo' => $request->activar);
-            ListasModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "UPDATE", "ListasModel", $request->id, $old, $new);
+            ListasModel::where('id', $request->id)->update(array('activo' => $request->activar));
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -459,18 +383,21 @@ class BackendController extends Controller
     public function ActasTP(Request $request){
         try {
             $sesion = (object)$request->sesion;
-            if($sesion->trabajo->id_rol < 3){
+            if($sesion->trabajo->id_rol == 1){
                 $datos = ActasModel::where('tipo_acta', 1)->get();
-            } else{
+            }
+            if($sesion->trabajo->id_rol == 2){
+                $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+                $datos = ActasModel::select('vee2_actas.*')->join('view_vee_delegadas', 'vee2_actas.id_delegada', 'view_vee_delegadas.id')
+                ->where('vee2_actas.tipo_acta', 1)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                ->orderBy('vee2_actas.id', 'asc')->get();
+            }
+            if($sesion->trabajo->id_rol > 2){
                 $datos = ActasModel::where('tipo_acta', 1)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
             }
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -482,15 +409,13 @@ class BackendController extends Controller
                 $date = Carbon::now()->format('YmdHisu');
                 if (isset($request->inputActa)) {
                     $request->file('inputActa')->storeAs('vee2_cargados', 'actatp_'.$date.'.'.$request->file('inputActa')->extension());
-                    $acta = array(
+                    ActasModel::create(array(
                         'id_delegada' => $sesion->trabajo->id_delegada,
                         'tipo_acta' => 1,
                         'descripcion' => $request->nombreActa,
                         'archivo' => 'actatp_'.$date.'.'.$request->file('inputActa')->extension(),
                         'nombre_archivo' => $request->file('inputActa')->getClientOriginalName()
-                    );
-                    $idModelo = ActasModel::create($acta)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "ActasModel", $idModelo, null, $acta);
+                    ));
                 }
                 DB::commit();
                 return $this->MsjRespuesta(true);
@@ -499,11 +424,7 @@ class BackendController extends Controller
             }
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -519,19 +440,12 @@ class BackendController extends Controller
         DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
-            $old = ActasModel::where('id', $request->id)->first();
-            $new = array('activo' => $request->activar);
-            ActasModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "UPDATE", "ActasModel", $request->id, $old, $new);
+            ActasModel::where('id', $request->id)->update(array('activo' => $request->activar));
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -544,11 +458,7 @@ class BackendController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -556,23 +466,26 @@ class BackendController extends Controller
     public function TemasPorTipo(Request $request){
         try {
             $sesion = (object)$request->sesion;
-            if($sesion->trabajo->id_rol < 3){
-                $datos = TemasPModel::where('nivel', $request->tipo)->where('eliminado', false)->get();
-            } else{
-                $datos = TemasPModel::where('nivel', $request->tipo)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+            if($sesion->trabajo->id_rol == 1){
+                $datos = TemasPModel::where('nivel', $request->tipo)->where('eliminado', false)->orderBy('nombre')->get();
+            }
+            if($sesion->trabajo->id_rol == 2){
+                $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+                $datos = TemasPModel::select('vee2_temas.*')->join('view_vee_delegadas', 'vee2_temas.id_delegada', 'view_vee_delegadas.id')
+                                ->where('vee2_temas.nivel', $request->tipo)->where('vee2_temas.eliminado', false)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                                ->orderBy('vee2_temas.nombre', 'asc')->get();
+            }
+            if($sesion->trabajo->id_rol > 2){
+                $datos = TemasPModel::where('nivel', $request->tipo)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('nombre')->get();
             }
             if ($request->tipo == 2) {
-                $temasp = TemasPModel::where('nivel', 1)->where('eliminado', false)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
+                $temasp = TemasPModel::where('nivel', 1)->where('eliminado', false)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('nombre')->get();
             }else{
                 $temasp = [];
             }
             return response()->json(array('datos' => $datos, 'temasp' => $temasp));
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -585,24 +498,17 @@ class BackendController extends Controller
             ($request->id_acta!=null)?$new["id_acta"]=$request->id_acta:null;
             ($request->id_padre!=null)?$new["id_padre"]=$request->id_padre:null;
             if ($request->id != 0) {
-                $old = TemasPModel::where('id', $request->id)->first();
                 TemasPModel::where('id', $request->id)->update($new);
-                $this->Auditoria($sesion->id, "UPDATE", "TemasPModel", $request->id, $old, $new);
             } else{
                 $new["id_delegada"]=$sesion->trabajo->id_delegada;
                 $new["nivel"]=$request->nivel;
-                $idModelo = TemasPModel::create($new)->id;
-                $this->Auditoria($sesion->id, "INSERT", "TemasPModel", $idModelo, null, $new);
+                TemasPModel::create($new);
             }
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -610,19 +516,12 @@ class BackendController extends Controller
         DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
-            $old = TemasPModel::where('id', $request->id)->first();
-            $new = array('activo' => $request->activar);
-            TemasPModel::where('id', $request->id)->update($new);
-            $this->Auditoria($sesion->id, "UPDATE", "TemasPModel", $request->id, $old, $new);
+            TemasPModel::where('id', $request->id)->update(array('activo' => $request->activar));
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -647,6 +546,20 @@ class BackendController extends Controller
                 $failure->values(); // The values of the row that has failed.
             }*/
             return $this->MsjRespuesta(false, $failures);
+        }
+    }
+
+    public function DocumentosAccion(Request $request){
+        try {
+            $documentos = DocumentosModel::where('id_accion', $request->id)->orderBy('n_tipo', 'desc')->get();
+            return response()->json(array(
+                "estado" => true,
+                "tipo" => "success",
+                "data" => $documentos
+            ), 200);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 

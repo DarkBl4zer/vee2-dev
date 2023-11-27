@@ -14,11 +14,7 @@ class ConfigController extends Controller
             $datos = UsuariosModel::get();
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 }

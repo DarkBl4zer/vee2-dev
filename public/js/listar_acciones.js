@@ -1,4 +1,7 @@
 $(document).ready(function() {
+    if(!permisos.nuevo){
+        $('#btnNuevo').remove();
+    }
     let hoy = new Date();
     SetCampoFecha('fechaPG', hoy.toISOString().split('T')[0]);
     ConsultarAcciones();
@@ -7,7 +10,6 @@ $(document).ready(function() {
     });
 });
 
-var plantillaHTML = new PlantillaHTML();
 function ConsultarAcciones(){
     let thisYear = new Date().getFullYear();
     if (thisYear == $('#periodo').val()) {
@@ -27,7 +29,6 @@ function ConsultarAcciones(){
 }
 
 function LlenaTabla(datos) {
-    console.log(datos);
     let filas = [];
     let columns = [
         {title: "#"},
@@ -38,7 +39,7 @@ function LlenaTabla(datos) {
     ];
     let targets = [4];
     let targets2 = [3];
-    if(!puedeEditar){
+    if(!permisos.nuevo){
         columns = [
             {title: "#"},
             {title: "Título"},
@@ -55,21 +56,24 @@ function LlenaTabla(datos) {
         columna.push(element.numero+'<br>'+element.nombreestado);
         columna.push(element.titulo);
         columna.push(element.entidades.string);
-        if (!puedeEditar) {
+        if (!permisos.nuevo) {
             columna.push(element.delegada);
         }
         columna.push(element.fechas);
-        if (puedeEditar && ppEditar) {
-            columna.push(plantillaHTML.itemAccionesTabla({
-                id: element.id,
-                estado: element.estado,
-                dec_firmada: element.dec_firmada,
-                editar: true,
-                conflicto: true
-            }));
-        } else{
-            columna.push('');
+        let editar = false;
+        if(permisos.editar && permisos.editar.includes(parseInt(element.estado))){
+            editar = true;
         }
+        columna.push(plantillaHTML.itemAccionesTabla({
+            id: element.id,
+            id_accion: element.id,
+            estado: element.estado,
+            dec_firmada: element.dec_firmada,
+            editar: editar,
+            conflicto: true,
+            documentos: true,
+            detalle: true
+        }));
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -96,7 +100,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     if (ppEditar) {
         $('#btnNuevo').show();
     }
@@ -234,7 +238,6 @@ function Editar(id) {
     LimpiarFormulario();
     let datos = {id};
     _RQ('GET','/back/accion_por_id', datos, function(result) {
-        console.log(result);
         $('#id_actuacion').val(result.id_actuacion);
         $('#temap').val(result.id_temap);
         CambiarTemaP(false);
@@ -252,9 +255,9 @@ function Editar(id) {
         $('#objetivo_general').val(result.objetivo_general);
         $('#entidades').select2().val(result.entidades.arr).trigger("change");
         $('#numero_profesionales').val(result.numero_profesionales);
-        $('#fechaPG').val(result.fecha_plangestion.split('-').reverse().join('/'));
-        $('#fechaIni').val(result.fecha_inicio.split('-').reverse().join('/'));
-        $('#fechaFin').val(result.fecha_final.split('-').reverse().join('/'));
+        $('#fechaPG').val(result.fecha_plangestion.substring(0, 10).split('-').reverse().join('/'));
+        $('#fechaIni').val(result.fecha_inicio.substring(0, 10).split('-').reverse().join('/'));
+        $('#fechaFin').val(result.fecha_final.substring(0, 10).split('-').reverse().join('/'));
         setTimeout(() => {
             if (result.id_temas != null) {
                 $('#temas').val(result.id_temas);
@@ -293,11 +296,20 @@ function CrearDeclaracion(id) {
 }
 
 function VerDeclaracion(id, estado, archivo){
-    if (estado==2 || estado ==4) {
+    if (permisos.editar && permisos.editar.includes(parseInt(estado))) {
         $('#iconVerDeclaracion').attr('onclick', "window.open('/back/descargar_archivo/?carpeta=vee2_generados&archivo="+archivo+"', '_blank');");
         $('#iconRepetirDeclaracion').attr('onclick', "CrearDeclaracion("+id+")");
         Mostrar('modalVerRepetirDeclaracion');
     } else{
         window.open('/back/descargar_archivo/?carpeta=vee2_generados&archivo='+archivo, '_blank');
     }
+}
+
+function VerDetalle(id) {
+    let datos = {id};
+    _RQ('GET','/back/accion_por_id', datos, function(result) {
+        $('#loading').hide();
+        $('#bodyTablaDetalle').html(plantillaHTML.itemsTablaDetalleAccion(result));
+        Mostrar('modalDetalle');
+    });
 }

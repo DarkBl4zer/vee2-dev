@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-date_default_timezone_set('America/Bogota');
 
 use App\Models\AccionesModel;
 use App\Models\ActasModel;
@@ -9,6 +8,8 @@ use App\Models\CargosModel;
 use App\Models\ConfiguracionesModel;
 use App\Models\DelegadasModel;
 use App\Models\ListasModel;
+use App\Models\PlanesGestionModel;
+use App\Models\PlanesTrabajoModel;
 use App\Models\RolesModel;
 use App\Models\TemasPModel;
 use App\Models\UsuarioNotificacionModel;
@@ -30,7 +31,13 @@ class FrontendController extends Controller
     public function Inicio(Request $request){
         $sesion = (object)$request->sesion;
         $slag = '';
-        return view('inicio', compact('sesion', 'slag'));
+        $conteo = array(
+            'acciones' => AccionesModel::where('activo', true)->count(),
+            'planest' => PlanesTrabajoModel::where('activo', true)->count(),
+            'planesg' => PlanesGestionModel::where('activo', true)->count(),
+            'ejecucion' => 0
+        );
+        return view('inicio', compact('sesion', 'slag', 'conteo'));
     }
 
     public function ConfigUsuarios(Request $request){
@@ -90,75 +97,85 @@ class FrontendController extends Controller
 
     public function ListarActas(Request $request){
         $sesion = (object)$request->sesion;
-        $permiteNueva = true;
-        if($sesion->trabajo->id_rol < 3){
-            $permiteNueva = false;
-            $actas = ActasModel::where('tipo_acta', 1)->get();
-        } else{
-            $actas = ActasModel::where('tipo_acta', 1)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
-        }
         $slag = 'temasprioritarios';
-        return view('listar_actas', compact('sesion', 'slag', 'permiteNueva', 'actas'));
+        $permisos = $this->PermisosPorPagina($request->path());
+        return view('listar_actas', compact('sesion', 'slag', 'permisos'));
     }
 
     public function ListarTemas(Request $request){
         $sesion = (object)$request->sesion;
-        $permiteNueva = true;
         if($sesion->trabajo->id_rol < 3){
-            $permiteNueva = false;
-            $actas = ActasModel::where('tipo_acta', 1)->where('activo', true)->get();
-            $temasp = TemasPModel::where('nivel', 1)->where('eliminado', false)->where('activo', true)->get();
+            $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+            $actas = ActasModel::select('vee2_actas.*')->join('view_vee_delegadas', 'vee2_actas.id_delegada', 'view_vee_delegadas.id')
+                                ->where('vee2_actas.tipo_acta', 1)->where('vee2_actas.activo', true)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                                ->orderBy('vee2_actas.descripcion', 'asc')->get();
+            $temasp = TemasPModel::select('vee2_temas.*')->join('view_vee_delegadas', 'vee2_temas.id_delegada', 'view_vee_delegadas.id')
+                                ->where('vee2_temas.nivel', 1)->where('vee2_temas.eliminado', false)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                                ->orderBy('vee2_temas.nombre', 'asc')->get();
         } else{
             $actas = ActasModel::where('tipo_acta', 1)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->get();
             $temasp = TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->where('eliminado', false)->where('activo', true)->get();
         }
         $slag = 'temasprioritarios';
-        return view('listar_temas', compact('sesion', 'slag', 'actas', 'temasp', 'permiteNueva'));
+        $permisos = $this->PermisosPorPagina($request->path());
+        return view('listar_temas', compact('sesion', 'slag', 'actas', 'temasp', 'permisos'));
     }
 
     public function ListarAccionesPyC(Request $request){
         $sesion = (object)$request->sesion;
-        $permiteNueva = true;
-        if($sesion->trabajo->id_rol < 3){
-            $permiteNueva = false;
+        $terminadas = array();
+        $temasp = array();
+        if($sesion->trabajo->id_rol == 1){
             $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->groupBy('year')->orderBy('year', 'desc')->get();
-        } else{
+        }
+        if($sesion->trabajo->id_rol == 2){
+            $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+            $years = AccionesModel::select('vee2_acciones.year')->join('view_vee_delegadas', 'vee2_acciones.id_delegada', 'view_vee_delegadas.id')
+                                ->where('vee2_acciones.year', '!=', date("Y"))->where('view_vee_delegadas.tipo', $tipoDelegada)
+                                ->groupBy('vee2_acciones.year')->orderBy('vee2_acciones.year', 'desc')->get();
+        }
+        if($sesion->trabajo->id_rol > 2){
+            $terminadas = AccionesModel::where('activo', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', 13)->orderBy('id', 'desc')->take(100)->get();
+            $temasp = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->get();
             $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->orderBy('year', 'desc')->get();
         }
         $acciones = ListasModel::where('tipo', 'actuacion_vee')->where('activo', true)->orderBy('id', 'asc')->get();
-        $terminadas = AccionesModel::where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', 16)->orderBy('id', 'desc')->take(100)->get();
+
         $paraSeguimiento = "";
         foreach ($terminadas as $item) {
             $nombre = Str::limit($item->nombre, 50, ' (...)');
             $paraSeguimiento .= '<option value="'.$item->id.'">'.$nombre.'</option>';
         }
-        $temasp = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->get();
         $profesiones = ListasModel::where('tipo', 'profesiones')->where('activo', true)->get();
         $cargos = CargosModel::orderBy('nombre_cargo', 'asc')->get();
         $slag = 'plandetrabajo';
-        return view('listar_acciones', compact('sesion', 'slag', 'years', 'permiteNueva', 'acciones', 'paraSeguimiento', 'temasp', 'profesiones', 'cargos'));
+        $permisos = $this->PermisosPorPagina($request->path());
+        return view('listar_acciones', compact('sesion', 'slag', 'years', 'permisos', 'acciones', 'paraSeguimiento', 'temasp', 'profesiones', 'cargos'));
     }
 
     public function ListarPlanesTrabajo(Request $request){
         $sesion = (object)$request->sesion;
-        $permiteNueva = true;
-        if($sesion->trabajo->id_rol < 3){
-            $permiteNueva = false;
+        if($sesion->trabajo->id_rol == 1){
             $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->groupBy('year')->orderBy('year', 'desc')->get();
-        } else{
+        }
+        if($sesion->trabajo->id_rol == 2){
+            $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+            $years = AccionesModel::select('vee2_acciones.year')->join('view_vee_delegadas', 'vee2_acciones.id_delegada', 'view_vee_delegadas.id')
+                                ->where('vee2_acciones.year', '!=', date("Y"))->where('view_vee_delegadas.tipo', $tipoDelegada)
+                                ->groupBy('vee2_acciones.year')->orderBy('vee2_acciones.year', 'desc')->get();
+        }
+        if($sesion->trabajo->id_rol > 2){
             $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->orderBy('year', 'desc')->get();
         }
         $slag = 'plandetrabajo';
-        return view('listar_planest', compact('sesion', 'slag', 'years', 'permiteNueva'));
+        $permisos = $this->PermisosPorPagina($request->path());
+        return view('listar_planest', compact('sesion', 'slag', 'years', 'permisos'));
     }
 
     public function ListarPlanesGestion(Request $request){
         $sesion = (object)$request->sesion;
-        $permiteNueva = true;
-        if($sesion->trabajo->id_rol < 3){
-            $permiteNueva = false;
-        }
         $slag = 'plandegestin';
-        return view('listar_planesg', compact('sesion', 'slag', 'permiteNueva'));
+        $permisos = $this->PermisosPorPagina($request->path());
+        return view('listar_planesg', compact('sesion', 'slag', 'permisos'));
     }
 }

@@ -106,6 +106,38 @@
         </div>
     </div>
 
+    <!-- Modal Historial Acción-->
+    <div class="modal fade" id="modalDocumentos" tabindex="-1" role="dialog" aria-labelledby="modalDocumentosLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDocumentosLabel">Documentos de la acción</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table id="tablaDocumentosAccion" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Usuario</th>
+                            <th scope="col">Archivo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyTablaDocumentosAccion">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
     <!-- Scroll to Top Button-->
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
@@ -125,10 +157,13 @@
     <script src="{{asset('js/sb-admin-2.js')}}"></script>
 
     <!-- Custom scripts base-->
-    <script src="{{asset('js/base.js')}}"></script>
     <script src="{{asset('js/plantillas.js')}}"></script>
+    <script src="{{asset('js/base.js')}}"></script>
+
+
 
     <script type="text/javascript">
+        var permisos = {!!(isset($permisos))?$permisos:"[]"!!};
         var baseTrabajo = {
             id_perfil: {{$sesion->trabajo->id_perfil}},
             firma: {!!(is_null($sesion->firma))?"false":"true";!!}

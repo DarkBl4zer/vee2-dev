@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AccionEntidadModel;
 use App\Models\AccionesModel;
+use App\Models\ActasModel;
 use App\Models\DeclaracionesModel;
 use App\Models\DeclaracionTablaModel;
 use App\Models\DelegadaEntidadModel;
+use App\Models\DelegadasModel;
+use App\Models\DocumentosModel;
+use App\Models\PerfilesModel;
 use App\Models\PlanesTrabajoModel;
 use App\Models\PlaTAccionModel;
 use App\Models\TemasPModel;
@@ -22,11 +26,17 @@ class PlanTrabajoController extends Controller
     public function AccionesPorPeriodo(Request $request){
         try {
             $sesion = (object)$request->sesion;
-            if($sesion->trabajo->id_rol < 3){
+            if($sesion->trabajo->id_rol == 1){
                 $datos = AccionesModel::where('year', $request->periodo)->orderBy('id', 'asc')->get();
-            } else{
+            }
+            if($sesion->trabajo->id_rol == 2){
+                $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+                $datos = AccionesModel::select('vee2_acciones.*')->join('view_vee_delegadas', 'vee2_acciones.id_delegada', 'view_vee_delegadas.id')
+                ->where('vee2_acciones.year', $request->periodo)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                ->orderBy('vee2_acciones.id', 'asc')->get();
+            }
+            if($sesion->trabajo->id_rol > 2){
                 $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
-                //****Consultar Declaraciones firmadas
                 $counter = 0;
                 foreach ($datos as $item) {
                     $datos[$counter]->dec_firmada = "";
@@ -41,11 +51,7 @@ class PlanTrabajoController extends Controller
             }
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -60,11 +66,7 @@ class PlanTrabajoController extends Controller
             }
             return response()->json(array('temas' => $temas, 'acta' => $acta));
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -82,11 +84,7 @@ class PlanTrabajoController extends Controller
             array_multisort($key_values, SORT_ASC, $entidades);
             return response()->json($entidades);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -105,49 +103,54 @@ class PlanTrabajoController extends Controller
             $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');
             $new["fecha_final"]=Carbon::createFromFormat('d/m/Y', $request->fecha_final)->format('Y-m-d');
             $new["id_padre"]=$request->id_padre;
+            $tema = TemasPModel::whereId($request->id_temas)->first();
             if ($request->id != 0) {
-                $old = AccionesModel::where('id', $request->id)->first();
                 AccionesModel::where('id', $request->id)->update($new);
-                $this->Auditoria($sesion->id, "UPDATE", "AccionesModel", $request->id, $old, $new);
                 AccionEntidadModel::where('id_accion', $request->id)->update(['activo' => false]);
-                $this->Auditoria($sesion->id, "UPDATE", "AccionEntidadModel", $request->id, 'activo:true ALL', 'activo:false ALL');
                 foreach ($request->entidades as $item) {
-                    $new2 = [
+                    AccionEntidadModel::create(array(
                         'id_accion' => $request->id,
-                        'id_entidad' => $item,
-                    ];
-                    $idAcEnt = AccionEntidadModel::create($new2)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
+                        'id_entidad' => $item
+                    ));
                 }
+                DocumentosModel::where('id_accion', $request->id)->where('n_tipo', 1)->update(array(
+                    'archivo' => $tema->modelActa->archivo,
+                    'n_original' => $tema->modelActa->nombre_archivo,
+                    'fecha' => Carbon::now()->format('d/m/Y'),
+                    'usuario' => $sesion->nombre,
+                    'id_usuario' => $sesion->id,
+                ));
             } else{
                 $new["id_delegada"]=$sesion->trabajo->id_delegada;
                 $new["year"]=date("Y");
                 $idModelo = AccionesModel::create($new)->id;
-                $this->Auditoria($sesion->id, "INSERT", "AccionesModel", $idModelo, null, $new);
                 foreach ($request->entidades as $item) {
-                    $new2 = [
+                    AccionEntidadModel::create(array(
                         'id_accion' => $idModelo,
-                        'id_entidad' => $item,
-                    ];
-                    $idAcEnt = AccionEntidadModel::create($new2)->id;
-                    $this->Auditoria($sesion->id, "INSERT", "AccionEntidadModel", $idAcEnt, null, $new2);
+                        'id_entidad' => $item
+                    ));
                 }
-                $declara = array(
+                DeclaracionesModel::create(array(
                     'id_accion' => $idModelo,
                     'id_usuario' => $sesion->id
-                );
-                $idDeclara = DeclaracionesModel::create($declara)->id;
-                $this->Auditoria($sesion->id, "INSERT", "DeclaracionesModel", $idDeclara, null, $declara);
+                ));
+                DocumentosModel::create(array(
+                    'id_accion' => $idModelo,
+                    'n_tipo' => 1,
+                    't_tipo' => 'ACTA TEMA PRINCIPAL',
+                    'carpeta' => 'vee2_cargados',
+                    'archivo' => $tema->modelActa->archivo,
+                    'n_original' => $tema->modelActa->nombre_archivo,
+                    'fecha' => Carbon::now()->format('d/m/Y'),
+                    'usuario' => $sesion->nombre,
+                    'id_usuario' => $sesion->id,
+                ));
             }
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -157,11 +160,7 @@ class PlanTrabajoController extends Controller
             $accion = AccionesModel::where('id', $request->id)->first();
             return response()->json($accion);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -205,20 +204,39 @@ class PlanTrabajoController extends Controller
                 AccionesModel::where('id', $request->id_accion)->update([
                     'estado' => 2
                 ]);
+                $archivo = $this->PDFDeclaracion($declaracion->id, true);
                 DeclaracionesModel::where('id', $declaracion->id)->update([
-                    'archivo_firmado' => $this->PDFDeclaracion($declaracion->id, true)
+                    'archivo_firmado' => $archivo
                 ]);
+                $documento = DocumentosModel::where('id_accion', $request->id_accion)->where('n_tipo', 2)->first();
+                if($documento != null){
+                    $documento->update(array(
+                        'archivo' => $archivo,
+                        'n_original' => $archivo,
+                        'fecha' => Carbon::now()->format('d/m/Y'),
+                        'usuario' => $sesion->nombre,
+                        'id_usuario' => $sesion->id,
+                    ));
+                } else{
+                    DocumentosModel::create(array(
+                        'id_accion' => $request->id_accion,
+                        'n_tipo' => 2,
+                        't_tipo' => 'DECLARACIÓN DELEGADO',
+                        'carpeta' => 'vee2_generados',
+                        'archivo' => $archivo,
+                        'n_original' => $archivo,
+                        'fecha' => Carbon::now()->format('d/m/Y'),
+                        'usuario' => $sesion->nombre,
+                        'id_usuario' => $sesion->id,
+                    ));
+                }
                 return $this->MsjRespuesta(true);
             } else{
                 return response()->json(array('id' => $declaracion->id));
             }
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -245,11 +263,7 @@ class PlanTrabajoController extends Controller
             $pdf = $this->PDFDeclaracion($request->id, false);
             return $pdf->stream();
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -294,18 +308,21 @@ class PlanTrabajoController extends Controller
     public function PlanestabajoPorPeriodo(Request $request){
         try {
             $sesion = (object)$request->sesion;
-            if($sesion->trabajo->id_rol < 3){
+            if($sesion->trabajo->id_rol == 1){
                 $datos = PlanesTrabajoModel::where('year', $request->periodo)->orderBy('id', 'asc')->orderBy('id_delegada', 'asc')->get();
-            } else{
+            }
+            if($sesion->trabajo->id_rol == 2){
+                $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+                $datos = PlanesTrabajoModel::select('vee2_planes_trabajo.*')->join('view_vee_delegadas', 'vee2_planes_trabajo.id_delegada', 'view_vee_delegadas.id')
+                ->where('vee2_planes_trabajo.year', $request->periodo)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                ->orderBy('vee2_planes_trabajo.id', 'asc')->orderBy('vee2_planes_trabajo.id_delegada', 'asc')->get();
+            }
+            if($sesion->trabajo->id_rol > 2){
                 $datos = PlanesTrabajoModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('version', 'asc')->get();
             }
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -336,11 +353,7 @@ class PlanTrabajoController extends Controller
                 'chks' => $arr_select
             ));
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -356,46 +369,150 @@ class PlanTrabajoController extends Controller
                 }
                 PlaTAccionModel::where('id_plantrabajo', $request->id)->delete();
             } else{
-                $new = [
+                $idModelo = PlanesTrabajoModel::create(array(
                     'year' => date("Y"),
                     'id_delegada' => $sesion->trabajo->id_delegada,
                     'version' => $request->version
-                ];
-                $idModelo = PlanesTrabajoModel::create($new)->id;
-                $this->Auditoria($sesion->id, "INSERT", "PlanesTrabajoModel", $idModelo, null, $new);
+                ))->id;
             }
             foreach ($request->arrAcciones as $item) {
                 PlaTAccionModel::create([
                     'id_plantrabajo' => $idModelo,
                     'id_accion' => $item
                 ]);
-                AccionesModel::where('id', $item)->update(['estado' => 6]);
+                AccionesModel::where('id', $item)->update(['estado' => 3]);
             }
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
-    public function FirmarPlanTrabajo(Request $request){
+    public function FirmarPlanTrabajoDelegado(Request $request){
         try {
-            PlanesTrabajoModel::where('id', $request->id)->update(array(
-                'estado' => 2,
-                'archivo_firmado' => $this->PDFPlanTrabajo($request->id, true)
+            $sesion = (object)$request->sesion;
+            $date = Carbon::now()->format('YmdHisu');
+            if (isset($request->inputActa)) {
+                $request->file('inputActa')->storeAs('vee2_cargados', 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension());
+                $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
+                $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+                $plantrabajo->update(array(
+                    'estado' => 2,
+                    'archivo_firmado' => $archivo_firmado,
+                    'id_delegado' => $sesion->id,
+                    'fecha_delegado' => Carbon::now()->format('d/m/Y')
+                ));
+                $noti = (object)array(
+                    'para' => 'Coordinador',
+                    'tipo' => 'primary',
+                    'texto' => 'Solicitud de aprobación plan de trabajo',
+                    'url' => '/planest/listar'
+                );
+                $this->Notificar($noti);
+                foreach ($plantrabajo->acciones as $accion) {
+                    $documento1 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 3)->first();
+                    if($documento1 != null){
+                        $documento1->update(array(
+                            'archivo' => 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension(),
+                            'n_original' => $request->file('inputActa')->getClientOriginalName(),
+                            'fecha' => Carbon::now()->format('d/m/Y'),
+                            'usuario' => $sesion->nombre,
+                            'id_usuario' => $sesion->id,
+                        ));
+                    } else{
+                        DocumentosModel::create(array(
+                            'id_accion' => $accion->id,
+                            'n_tipo' => 3,
+                            't_tipo' => 'ACTA APROBACIÓN PLAN DE TRABAJO',
+                            'carpeta' => 'vee2_cargados',
+                            'archivo' => 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension(),
+                            'n_original' => $request->file('inputActa')->getClientOriginalName(),
+                            'fecha' => Carbon::now()->format('d/m/Y'),
+                            'usuario' => $sesion->nombre,
+                            'id_usuario' => $sesion->id,
+                        ));
+                    }
+/*
+                    $documento2 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 4)->first();
+                    if($documento2 != null){
+                        $documento2->update(array(
+                            'archivo' => $archivo_firmado,
+                            'n_original' => $archivo_firmado,
+                            'fecha' => Carbon::now()->format('d/m/Y'),
+                            'usuario' => $sesion->nombre,
+                            'id_usuario' => $sesion->id,
+                        ));
+                    } else{
+                        DocumentosModel::create(array(
+                            'id_accion' => $accion->id,
+                            'n_tipo' => 4,
+                            't_tipo' => 'PLAN DE TRABAJO FIRMADO',
+                            'carpeta' => 'vee2_generados',
+                            'archivo' => $archivo_firmado,
+                            'n_original' => $archivo_firmado,
+                            'fecha' => Carbon::now()->format('d/m/Y'),
+                            'usuario' => $sesion->nombre,
+                            'id_usuario' => $sesion->id,
+                        ));
+                    }
+*/
+                }
+                return $this->MsjRespuesta(true);
+            }
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function FirmarPlanTrabajoCoordinador(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
+            $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+            $plantrabajo->update(array(
+                'estado' => 5,
+                'archivo_firmado' => $archivo_firmado,
+                'id_coordinador' => $sesion->id,
+                'fecha_coordinador' => Carbon::now()->format('d/m/Y')
             ));
+            $noti = (object)array(
+                'para' => 'Delegado',
+                'id_delegada' => $plantrabajo->id_delegada,
+                'tipo' => 'success',
+                'texto' => 'Plan de trabajo aprobado',
+                'url' => '/planest/listar'
+            );
+            $this->Notificar($noti);
+            foreach ($plantrabajo->acciones as $accion) {
+                $documento2 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 4)->first();
+                if($documento2 != null){
+                    $documento2->update(array(
+                        'archivo' => $archivo_firmado,
+                        'n_original' => $archivo_firmado,
+                        'fecha' => Carbon::now()->format('d/m/Y'),
+                        'usuario' => $sesion->nombre,
+                        'id_usuario' => $sesion->id,
+                    ));
+                } else{
+                    DocumentosModel::create(array(
+                        'id_accion' => $accion->id,
+                        'n_tipo' => 4,
+                        't_tipo' => 'PLAN DE TRABAJO FIRMADO',
+                        'carpeta' => 'vee2_generados',
+                        'archivo' => $archivo_firmado,
+                        'n_original' => $archivo_firmado,
+                        'fecha' => Carbon::now()->format('d/m/Y'),
+                        'usuario' => $sesion->nombre,
+                        'id_usuario' => $sesion->id,
+                    ));
+                }
+                $accion->update(array('estado' => 5));
+            }
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -404,16 +521,14 @@ class PlanTrabajoController extends Controller
             $pdf = $this->PDFPlanTrabajo($request->id, false);
             return $pdf->stream();
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
     private function PDFPlanTrabajo($idPT, $save){
         $sesion = (object)Session::get('UsuarioVee');
+        $plantrabajo = PlanesTrabajoModel::where('id', $idPT)->first();
+
         $PTAcciones = PlaTAccionModel::where('id_plantrabajo', $idPT)->get();
 
         $checkedT = pathinfo(public_path('img/checked.png'), PATHINFO_EXTENSION);
@@ -422,16 +537,30 @@ class PlanTrabajoController extends Controller
         $uncheckedT = pathinfo(public_path('img/unchecked.png'), PATHINFO_EXTENSION);
         $uncheckedD = file_get_contents(public_path('img/unchecked.png'));
 
-        $datos = (object)array(
-            'delegado_nombre' => $sesion->nombre,
-            'delegado_firma' => $this->ImagenFirma($sesion->firma),
-            'delegado_fecha' => Carbon::now()->format('d/m/Y'),
-            'coordinador_nombre' => 'Coordinador',
-            'coordinador_firma' => $this->ImagenFirma("Firma"),
-            'coordinador_fecha' => 'Fecha',
-            "checked" => 'data:image/'.$checkedT.';base64,'.base64_encode($checkedD),
-            "unchecked" => 'data:image/'.$uncheckedT.';base64,'.base64_encode($uncheckedD),
-        );
+        if($plantrabajo->estado == 1){
+            $datos = (object)array(
+                'delegado_nombre' => $sesion->nombre,
+                'delegado_firma' => $this->ImagenFirma($sesion->firma),
+                'delegado_fecha' => Carbon::now()->format('d/m/Y'),
+                'coordinador_nombre' => 'Coordinador',
+                'coordinador_firma' => $this->ImagenFirma("Firma"),
+                'coordinador_fecha' => 'Fecha',
+                "checked" => 'data:image/'.$checkedT.';base64,'.base64_encode($checkedD),
+                "unchecked" => 'data:image/'.$uncheckedT.';base64,'.base64_encode($uncheckedD),
+            );
+        } else{
+            $datos = (object)array(
+                'delegado_nombre' => $plantrabajo->delegado->nombre,
+                'delegado_firma' => $this->ImagenFirma($plantrabajo->delegado->firmas[0]->cnv_firma),
+                'delegado_fecha' => $plantrabajo->fecha_delegado,
+                'coordinador_nombre' => $sesion->nombre,
+                'coordinador_firma' => $this->ImagenFirma($sesion->firma),
+                'coordinador_fecha' => Carbon::now()->format('d/m/Y'),
+                "checked" => 'data:image/'.$checkedT.';base64,'.base64_encode($checkedD),
+                "unchecked" => 'data:image/'.$uncheckedT.';base64,'.base64_encode($uncheckedD),
+            );
+        }
+
         //return view('pdfs.plantrabajo', compact('PTAcciones', 'datos'));
         $pdf = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadView('pdfs.plantrabajo', compact('PTAcciones', 'datos'));
         $pdf->setPaper("c2", 'landscape');

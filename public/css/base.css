@@ -143,3 +143,12 @@ table.dataTable>thead .sorting:before, table.dataTable>thead .sorting:after, tab
     display: none;
     font-size: 12px;
 }
+
+.dtTooltip {
+    left: 18px !important;
+}
+
+#tablaDocumentosAccion td, #tablaDocumentosAccion th, #tablaDetalle td, #tablaDetalle th{
+    padding: 2px 4px 2px 4px;
+    font-size: 13px;
+}

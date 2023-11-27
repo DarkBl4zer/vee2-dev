@@ -20,7 +20,13 @@ return new class extends Migration
             $table->boolean('activo')->default(true);
             $table->integer('version')->default(1);
             $table->string('archivo_firmado', 255)->nullable();
+            $table->string('archivo_acta', 255)->nullable();
+            $table->string('original_acta', 255)->nullable();
             $table->boolean('vigente')->default(true);
+            $table->unsignedBigInteger('id_delegado')->nullable();
+            $table->string('fecha_delegado', 255)->nullable();
+            $table->unsignedBigInteger('id_coordinador')->nullable();
+            $table->string('fecha_coordinador', 255)->nullable();
             $table->timestamps();
         });
     }

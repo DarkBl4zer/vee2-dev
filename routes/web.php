@@ -41,11 +41,12 @@ Route::middleware('vee')->group(function () {
     Route::get('plagesg/listar', [FrontendController::class, 'ListarPlanesGestion'])->name('listar_planesg');
 
     /* ====================================================== BACKEND ====================================================== */
-    Route::get('back/descargar_archivo', [BackendController::class, 'DescargarArchivo']);
     /* ******************* Base ******************* */
+    Route::get('back/descargar_archivo', [BackendController::class, 'DescargarArchivo']);
     Route::post('back/trabajo', [BackendController::class, 'VariablesTrabajo']);
     Route::get('back/notificaciones', [BackendController::class, 'Notificaciones']);
     Route::post('back/notificacion_vista', [BackendController::class, 'NotificacionesVista']);
+    Route::get('back/documentos_accion', [BackendController::class, 'DocumentosAccion']);
     /* ******************* Notificaciones ******************* */
     Route::post('back/eliminar_notificacion', [BackendController::class, 'EliminarNotificacion']);
     /* ******************* Configuraciones / Usuarios ******************* */
@@ -82,7 +83,8 @@ Route::middleware('vee')->group(function () {
     Route::get('back/planest_por_periodo', [PlanTrabajoController::class, 'PlanestabajoPorPeriodo']);
     Route::get('back/acciones_por_periodo_pt', [PlanTrabajoController::class, 'AccionesPorPeriodoPT']);
     Route::post('back/crear_actualizar_plantrabajo', [PlanTrabajoController::class, 'CrearActualizarPlanTrabajo']);
-    Route::post('back/firmar_plantrabajo', [PlanTrabajoController::class, 'FirmarPlanTrabajo']);
+    Route::post('back/firmar_plantrabajo_d', [PlanTrabajoController::class, 'FirmarPlanTrabajoDelegado']);
+    Route::post('back/firmar_plantrabajo_c', [PlanTrabajoController::class, 'FirmarPlanTrabajoCoordinador']);
     Route::get('back/previa_plantrabajo', [PlanTrabajoController::class, 'PreviaPlanTrabajo']);
 
     /* ******************* PlanesGestion ******************* */

@@ -1,9 +1,8 @@
 <?php
 
 namespace Database\Seeders;
-date_default_timezone_set('America/Bogota');
+
 use App\Models\PerfilesModel;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PerfilesSeed extends Seeder
@@ -15,9 +14,14 @@ class PerfilesSeed extends Seeder
     {
         $datos = [
             array('id_usuario' => 1, 'id_rol' => 1),
-            array('id_usuario' => 1, 'id_rol' => 3, 'id_delegada' => 37),
-            array('id_usuario' => 1, 'id_rol' => 4, 'id_delegada' => 60),
+            array('id_usuario' => 1, 'id_rol' => 2, 'tipo_coord' => 'PD'),
             array('id_usuario' => 1, 'id_rol' => 2, 'tipo_coord' => 'LOCALES'),
+            array('id_usuario' => 1, 'id_rol' => 3, 'id_delegada' => 57),
+            array('id_usuario' => 1, 'id_rol' => 3, 'id_delegada' => 16),
+            array('id_usuario' => 1, 'id_rol' => 4, 'id_delegada' => 57),
+            array('id_usuario' => 1, 'id_rol' => 4, 'id_delegada' => 16),
+            array('id_usuario' => 1, 'id_rol' => 5, 'id_delegada' => 57),
+            array('id_usuario' => 1, 'id_rol' => 5, 'id_delegada' => 16),
         ];
         for ($i=0; $i < count($datos); $i++) {
             PerfilesModel::create($datos[$i]);

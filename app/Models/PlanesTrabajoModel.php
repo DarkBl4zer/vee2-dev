@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class PlanesTrabajoModel extends Model
@@ -19,7 +20,13 @@ class PlanesTrabajoModel extends Model
         'activo',
         'version',
         'archivo_firmado',
-        'vigente'
+        'archivo_acta',
+        'original_acta',
+        'vigente',
+        'id_delegado',
+        'fecha_delegado',
+        'id_coordinador',
+        'fecha_coordinador'
     ];
     protected $guarded = ['id'];
     protected $appends = ['str_acciones', 'fechas', 'nombreestado', 'delegada'];
@@ -30,9 +37,9 @@ class PlanesTrabajoModel extends Model
 
     public function getStrAccionesAttribute(): String{
         $pt_acc = PlaTAccionModel::where('id_plantrabajo', $this->id)->get();
-        $string = '<ul style="padding-left: 10px;">';
+        $string = '<ul style="padding-left: 15px;">';
         foreach ($pt_acc as $item) {
-            $string .= '<li>['.$item->accion->numero.'] '.Str::limit($item->accion->titulo, 150, ' (...)').'</li>';
+            $string .= '<li>['.$item->accion->numero.'] '.Str::limit($item->accion->titulo, 150, ' (...)').' <i class="fas fa-stamp" data-toggle="tooltip" data-placement="top" title="Documentos" onclick="DocumentosAccion('.$item->id.');" style="font-size: 14px;"></i></li>';
         }
         $string .= '</ul>';
         return $string;
@@ -55,6 +62,14 @@ class PlanesTrabajoModel extends Model
             'nombre' => $delegada->nombre,
             'tipo' => $delegada->tipo
         );
+    }
+
+    public function delegado() : HasOne {
+        return $this->hasOne(UsuariosModel::class, 'id', 'id_delegado');
+    }
+
+    public function coordinador() : HasOne {
+        return $this->hasOne(UsuariosModel::class, 'id', 'id_coordinador');
     }
 
 }

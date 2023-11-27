@@ -1,9 +1,8 @@
 <?php
 
 namespace Database\Seeders;
-date_default_timezone_set('America/Bogota');
+
 use App\Models\UsuarioNotificacionModel;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UsuarioNotificacionSeed extends Seeder
@@ -19,7 +18,7 @@ class UsuarioNotificacionSeed extends Seeder
             array('id_usuario' => 1, 'id_perfil' => 1, 'tipo' => 'primary', 'texto' => 'Solicitud de aprobación plan de trabajo', 'url' => 'https://translate.google.com.co/?sl=auto&tl=es&text=primary&op=translate'),
         ];
         for ($i=0; $i < count($datos); $i++) {
-            UsuarioNotificacionModel::create($datos[$i]);
+            //UsuarioNotificacionModel::create($datos[$i]);
         }
     }
 }

@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
+
 
 class PlanGestionController extends Controller
 {
@@ -30,11 +32,7 @@ class PlanGestionController extends Controller
             }
             return response()->json($datos);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -71,11 +69,7 @@ class PlanGestionController extends Controller
                 'acciones' => $acciones
             ));
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -103,11 +97,7 @@ class PlanGestionController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -130,11 +120,7 @@ class PlanGestionController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -143,11 +129,7 @@ class PlanGestionController extends Controller
             $texto = PlanGTextoModel::where('id_accion', $request->id)->where('tipo', $request->tipo)->first();
             return response()->json($texto);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -177,11 +159,7 @@ class PlanGestionController extends Controller
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -198,11 +176,7 @@ class PlanGestionController extends Controller
             }
             return response()->json($cronograma);
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
@@ -211,16 +185,13 @@ class PlanGestionController extends Controller
             $pdf = $this->PDFPlanGestion($request->id, false);
             return $pdf->stream();
         } catch (Exception $ex) {
-            return $this->MsjRespuesta(false, [
-                'getFile' => $ex->getFile(),
-                'getLine' => $ex->getLine(),
-                'getMessage' => $ex->getMessage()
-            ]);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
     private function PDFPlanGestion($idAcc, $save){
         $sesion = (object)Session::get('UsuarioVee');
+        $date = Carbon::now()->format('YmdHis');
         $plangestion = PlanesGestionModel::where('id_accion', $idAcc)->first();
         $funcionarios = array();
         foreach ($plangestion->declaraciones as $item) {
@@ -247,16 +218,35 @@ class PlanGestionController extends Controller
         $pdf_pg = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true, 'isPhpEnabled' => true])->loadView('pdfs.plangestion', compact('plangestion', 'funcionarios', 'datos'));
         $pdf_pg->setPaper("letter", 'portrait');
         $pdf_pg->output();
-        $dom_pdf = $pdf_pg->getDomPDF();
-        $canvas = $dom_pdf->get_canvas();
-        $canvas->page_text(500, 51, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
+        $dom_pdf_pg = $pdf_pg->getDomPDF();
+        $canvas_pg = $dom_pdf_pg->get_canvas();
+        $canvas_pg->page_text(500, 51, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
+        //return $pdf_pg->stream();
+        $archivoPG = 'PG_1_'.$date.'.pdf';
+        $pdf_pg->save(storage_path().'/app/vee2_temp/'.$archivoPG);
+
+        $cronograma = $plangestion->cronograma;
+        $pdf_cron = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadView('pdfs.cronograma', compact('cronograma', 'funcionarios', 'datos'));
+        $pdf_cron->setPaper("A3", 'landscape');
+        $pdf_cron->output();
+        $dom_pdf_cron = $pdf_cron->getDomPDF();
+        $canvas_cron = $dom_pdf_cron->get_canvas();
+        $canvas_cron->page_text(1080, 62, "{PAGE_NUM} de {PAGE_COUNT}", null, 12, array(0, 0, 0));
+        //return $pdf_cron->stream();
+        $archivoCRON = 'CRON_1_'.$date.'.pdf';
+        $pdf_cron->save(storage_path().'/app/vee2_temp/'.$archivoCRON);
+
+        $oMerger = PDFMerger::init();
+        $oMerger->addPDF(storage_path().'/app/vee2_temp/'.$archivoPG, 'all');
+        $oMerger->addPDF(storage_path().'/app/vee2_temp/'.$archivoCRON, 'all');
+        $oMerger->merge();
+        $oMerger->stream();
         if($save){
-            $date = Carbon::now()->format('YmdHis');
             $nombreArchivo = 'PLAN_G_'.$idAcc.'_'.$date.'.pdf';
-            $pdf_pg->save(storage_path().'/app/vee2_generados/'.$nombreArchivo);
+            $oMerger->save(storage_path().'/app/vee2_generados/'.$nombreArchivo);
             return $nombreArchivo;
         } else{
-            return $pdf_pg;
+            return $oMerger;
         }
     }
 

@@ -81,7 +81,7 @@ class PlanesGestionModel extends Model
     }
 
     public function getFinformeAttribute(): String{
-        $finforme = Carbon::createFromFormat('Y-m-d', $this->fecha_informe)->format('d/m/Y');
+        $finforme = Carbon::createFromFormat('Y-m-d h:m:s', $this->fecha_informe)->format('d/m/Y');
         return $finforme;
     }
 

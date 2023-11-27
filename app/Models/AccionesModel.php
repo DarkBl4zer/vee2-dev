@@ -38,7 +38,7 @@ class AccionesModel extends Model
     public function getEntidadesAttribute(): Array{
         $entidades = AccionEntidadModel::where('id_accion', $this->id)->where('activo', true)->get();
         $arr = array();
-        $string = '<ul style="padding-left: 10px;">';
+        $string = '<ul style="padding-left: 15px;">';
         foreach ($entidades as $item) {
             $string .= '<li>'.$item->entidad->nombre.'</li>';
             array_push($arr, $item->id_entidad);
@@ -65,7 +65,8 @@ class AccionesModel extends Model
         }
         return array(
             'archivo' => $archivo->modelActa->archivo,
-            'tema' => $archivo->nombre
+            'tema' => $archivo->nombre,
+            'padre' => $archivo->padre
         );
     }
 

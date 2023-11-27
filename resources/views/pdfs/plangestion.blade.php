@@ -250,7 +250,7 @@
         </tr>
         <tr>
             <td colspan="7" style="padding: 5px;">
-                {{$datos->delegado_empleo}}
+                Personero(a) Delegado(a) o Local
             </td>
         </tr>
     </table>
@@ -292,7 +292,7 @@
         </tr>
         <tr>
             <td colspan="7" style="padding: 5px;">
-                {{$datos->coordinador_empleo}}
+                Personero(a) Delegado(a) para la Coordinación
             </td>
         </tr>
     </table>

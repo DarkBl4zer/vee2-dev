@@ -1,4 +1,3 @@
-var plantillaHTML = new PlantillaHTML();
 var datosTabla, dataTable;
 datosTabla = dataTable = null;
 
@@ -86,7 +85,7 @@ function LlenaTabla(datos) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     datosTabla.forEach(element => {
         $('#tipoValor'+element.id).val(element.tipo_valor);
         $('.inputFila'+element.id).hide();
@@ -144,7 +143,6 @@ function Guardar(id){
         tipo_valor: $('#tipoValor'+id).val()
     };
     _RQ('POST','/back/crear_actualizar_item_lista', datos, function(result) {
-        console.log(result);
         _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
             ConsultarLista($('#lista').val());
         });
