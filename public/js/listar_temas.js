@@ -4,6 +4,8 @@ $(document).ready(function() {
     }
     if(!permisos.masiva){
         $('.masiva').remove();
+    } else{
+        $('.masiva').show();
     }
     bsCustomFileInput.init();
     $('#loading').hide();

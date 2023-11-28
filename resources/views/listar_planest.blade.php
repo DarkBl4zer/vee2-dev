@@ -80,7 +80,7 @@ Planes de trabajo
 <div class="modal fade" id="modalFirmar" tabindex="-1" role="dialog" aria-labelledby="modalFirmarLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="padding: 0px 8px;">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -124,7 +124,7 @@ Planes de trabajo
 <div class="modal fade" id="modalAprobar" tabindex="-1" role="dialog" aria-labelledby="modalAprobarLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="padding: 0px 8px;">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

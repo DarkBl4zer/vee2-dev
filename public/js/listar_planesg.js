@@ -4,6 +4,7 @@ $(document).ready(function() {
     }
     let hoy = new Date();
     SetCampoFecha('fecha_informe', hoy.toISOString().split('T')[0]);
+    bsCustomFileInput.init();
     ConsultarPlanes();
 });
 
@@ -24,43 +25,51 @@ function LlenaTabla(datos) {
         {title: "#"},
         {title: "Título"},
         {title: "Equipo"},
-        {title: "Estado"},
         {title: "Fechas"},
         {title: "Acciones"}
     ];
-    let targets = [5];
-    if(!permisos.editar){
+    let targets = [4];
+    if(!permisos.nuevo){
         columns = [
             {title: "#"},
             {title: "Título"},
             {title: "Equipo"},
-            {title: "Estado"},
             {title: "Delegada / Local"},
             {title: "Fechas"},
             {title: "Acciones"}
         ];
-        targets = [6];
+        targets = [5];
     }
     datos.forEach(element => {
         let columna = [];
         columna.push(element.accion.numero+'<br>'+element.nombreestado);
         columna.push(element.accion.titulo);
         columna.push(plantillaHTML.itemEquipoPlangestion(element.declaraciones));
-        columna.push(element.estado);
         if (!permisos.nuevo) {
             columna.push(element.delegada);
         }
         columna.push(element.fechas);
-        if (permisos.nuevo) {
-            columna.push(plantillaHTML.itemAccionesTabla({
-                id: element.id_accion,
-                estado: element.estado,
-                editar: true,
-                generar_pg: true
-            }));
-        } else{
-            columna.push('');
+        let editar = false;
+        if(permisos.editar && permisos.editar.includes(parseInt(element.estado))){
+            editar = true;
         }
+        let conflicto = false;
+        if (element.estado > 1) {
+            conflicto = true;
+        }
+        columna.push(plantillaHTML.itemAccionesTabla({
+            id: element.id_accion,
+            id_accion: element.id_accion,
+            estado: element.estado,
+            editar: editar,
+            documentos: true,
+            detalle: true,
+            generar_pg: true,
+            conflicto: conflicto,
+            dec_firmada: element.dec_firmada,
+            aprobar: true,
+            aprobar_d: 'Viabilidad delegado'
+        }));
         filas.push(columna);
     });
     dataTable = $('#dataTable').DataTable({
@@ -88,7 +97,7 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    $('td i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
     $('#loading').hide();
 });
 
@@ -251,4 +260,44 @@ function Editar(id, tipo=1) {
 
 function VistaPrevia(id, estado) {
     window.open('/back/previa_plangestion?id='+id, '_blank');
+}
+
+function VerDetalle(id) {
+    let datos = {id};
+    _RQ('GET','/back/accion_por_id', datos, function(result) {
+        $('#loading').hide();
+        $('#bodyTablaDetalle').html(plantillaHTML.itemsTablaDetalleAccion(result));
+        Mostrar('modalDetalle');
+    });
+}
+
+function CrearDeclaracion(id) {
+    if (!baseTrabajo.firma) {
+        $('#alertNoFirma0').show();
+    }
+    $('#idCreaEdita').val(id);
+    Mostrar('modalImparcialidad');
+}
+
+function VerDeclaracion(id, estado, archivo){
+    if (permisos.editar && permisos.editar.includes(parseInt(estado))) {
+        $('#iconVerDeclaracion').attr('onclick', "window.open('/back/descargar_archivo/?carpeta=vee2_generados&archivo="+archivo+"', '_blank');");
+        $('#iconRepetirDeclaracion').attr('onclick', "CrearDeclaracion("+id+")");
+        Mostrar('modalVerRepetirDeclaracion');
+    } else{
+        window.open('/back/descargar_archivo/?carpeta=vee2_generados&archivo='+archivo, '_blank');
+    }
+}
+
+function ConfirmarAprobar(id, estado){
+    $('#idCreaEdita').val(id);
+    if (estado == 3) {
+        Mostrar('modalAprobarDelegado');
+    }
+    if (estado == 4) {
+        Mostrar('modalAprobarEnlace');
+    }
+    if (estado == 5) {
+        Mostrar('modalAprobarCoordinador');
+    }
 }

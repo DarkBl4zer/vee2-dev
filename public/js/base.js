@@ -25,6 +25,7 @@ function ConsultarNotificaciones() {
 
 //Permite hacer consumo de los servicios de backend de la aplicacion
 function _RQ(tipo, endpoint, datos, back, file = false){
+    console.log(endpoint);
     let data = (tipo=='GET')?datos:JSON.stringify(datos);
     let dataType = "json";
     let contentType = "application/json; charset=utf-8";

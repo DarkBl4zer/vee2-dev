@@ -174,8 +174,10 @@ class FrontendController extends Controller
 
     public function ListarPlanesGestion(Request $request){
         $sesion = (object)$request->sesion;
+        $profesiones = ListasModel::where('tipo', 'profesiones')->where('activo', true)->get();
+        $cargos = CargosModel::orderBy('nombre_cargo', 'asc')->get();
         $slag = 'plandegestin';
         $permisos = $this->PermisosPorPagina($request->path());
-        return view('listar_planesg', compact('sesion', 'slag', 'permisos'));
+        return view('listar_planesg', compact('sesion', 'slag', 'permisos', 'profesiones', 'cargos'));
     }
 }

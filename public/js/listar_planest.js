@@ -237,7 +237,7 @@ function VerFirmado(archivo) {
     window.open('/back/descargar_archivo/?carpeta=vee2_generados&archivo='+archivo, '_blank');
 }
 
-function ConfirmarAprobar(id){
+function ConfirmarAprobar(id, estado){
     $('#idCreaEdita').val(id);
     Mostrar('modalAprobar');
 }

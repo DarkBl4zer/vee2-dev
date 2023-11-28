@@ -11,6 +11,7 @@ use App\Models\DelegadaEntidadModel;
 use App\Models\DelegadasModel;
 use App\Models\DocumentosModel;
 use App\Models\PerfilesModel;
+use App\Models\PlanesGestionModel;
 use App\Models\PlanesTrabajoModel;
 use App\Models\PlaTAccionModel;
 use App\Models\TemasPModel;
@@ -220,8 +221,8 @@ class PlanTrabajoController extends Controller
                 } else{
                     DocumentosModel::create(array(
                         'id_accion' => $request->id_accion,
-                        'n_tipo' => 2,
-                        't_tipo' => 'DECLARACIÓN DELEGADO',
+                        'n_tipo' => ($declaracion->tipo_usuario == 'DELEGADO')?2:5,
+                        't_tipo' => 'DECLARACIÓN '.$declaracion->tipo_usuario,
                         'carpeta' => 'vee2_generados',
                         'archivo' => $archivo,
                         'n_original' => $archivo,
@@ -229,6 +230,20 @@ class PlanTrabajoController extends Controller
                         'usuario' => $sesion->nombre,
                         'id_usuario' => $sesion->id,
                     ));
+                }
+                if($declaracion->tipo_usuario == 'FUNCIONARIO'){
+                    if ($this->TodasFirmadas($request->id_accion)) {
+                        PlanesGestionModel::where('id_accion', $request->id_accion)->update([
+                            'estado' => 3
+                        ]);
+                        $noti = (object)array(
+                            'para' => 'Delegado',
+                            'tipo' => 'primary',
+                            'texto' => 'Declaraciones del equipo firmadas',
+                            'url' => '/plagesg/listar'
+                        );
+                        $this->Notificar($noti);
+                    }
                 }
                 return $this->MsjRespuesta(true);
             } else{
@@ -434,30 +449,6 @@ class PlanTrabajoController extends Controller
                             'id_usuario' => $sesion->id,
                         ));
                     }
-/*
-                    $documento2 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 4)->first();
-                    if($documento2 != null){
-                        $documento2->update(array(
-                            'archivo' => $archivo_firmado,
-                            'n_original' => $archivo_firmado,
-                            'fecha' => Carbon::now()->format('d/m/Y'),
-                            'usuario' => $sesion->nombre,
-                            'id_usuario' => $sesion->id,
-                        ));
-                    } else{
-                        DocumentosModel::create(array(
-                            'id_accion' => $accion->id,
-                            'n_tipo' => 4,
-                            't_tipo' => 'PLAN DE TRABAJO FIRMADO',
-                            'carpeta' => 'vee2_generados',
-                            'archivo' => $archivo_firmado,
-                            'n_original' => $archivo_firmado,
-                            'fecha' => Carbon::now()->format('d/m/Y'),
-                            'usuario' => $sesion->nombre,
-                            'id_usuario' => $sesion->id,
-                        ));
-                    }
-*/
                 }
                 return $this->MsjRespuesta(true);
             }
@@ -571,6 +562,16 @@ class PlanTrabajoController extends Controller
             return $nombreArchivo;
         } else{
             return $pdf;
+        }
+    }
+
+    private function TodasFirmadas($id_accion){
+        $sinConflicto = DeclaracionesModel::where('id_accion', $id_accion)->where('activo', true)->where('previa', false)->where('firmado', true)->where('conflicto', false)->count();
+        $total = DeclaracionesModel::where('id_accion', $id_accion)->where('activo', true)->count();
+        if($total == $sinConflicto){
+            return true;
+        } else{
+            return false;
         }
     }
 

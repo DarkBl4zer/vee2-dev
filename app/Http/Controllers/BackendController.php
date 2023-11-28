@@ -34,15 +34,7 @@ class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        $plantrabajo = PlanesTrabajoModel::where('id', 1)->first();
-        $noti = (object)array(
-            'para' => 'Delegado',
-            'id_delegada' => $plantrabajo->id_delegada,
-            'tipo' => 'success',
-            'texto' => 'Plan de trabajo aprobado',
-            'url' => '/planest/listar'
-        );
-        return $this->Notificar($noti);
+        return $sesion;
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){

@@ -180,7 +180,11 @@ function GuardarDeclaracion(previa) {
             Ocultar('modalImparcialidad');
             Ocultar('modalVerRepetirDeclaracion');
             _MSJ(result.tipo, result.txt, function() {
-                ConsultarAcciones();
+                if (window.location.pathname == '/accionespyc/listar') {
+                    ConsultarAcciones();
+                } else {
+                    ConsultarPlanes();
+                }
             });
         }
     });

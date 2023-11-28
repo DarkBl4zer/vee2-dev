@@ -73,7 +73,7 @@ Planes de gestión
                         <table class="table table-bordered" id="dataTableUsuariosIn" width="100%" cellspacing="0" style="font-size: 12px;">
                         </table>
                     </div>
-                    <div class="col-md-12" style="position: relative">
+                    <div class="col-md-12" style="position: relative; display: none;">
                         <button type="button" class="btn btn-primary btn-sm" style="position: absolute; top: -32px;" onclick="ModtrarUsuariosOut();">De otras delegadas</button>
                     </div>
                 </div>
@@ -102,9 +102,44 @@ Planes de gestión
 
 @include('componentes.nuevo_plangestion')
 
-<!-- Modal -->
-<div class="modal fade" id="modalFirmar" tabindex="-1" role="dialog" aria-labelledby="modalFirmarLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<!-- Modal Detalle Accion-->
+<div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-labelledby="modalDetalleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetalleLabel">Detalle acción</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <table id="tablaDetalle" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Campo</th>
+                                    <th scope="col">Dato registrado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyTablaDetalle">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" >Cerrar</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal ver/repetir declración -->
+<div class="modal fade" id="modalVerRepetirDeclaracion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -113,19 +148,49 @@ Planes de gestión
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
-                    <div class="row" id="alertNoFirma" style="display: none;">
-                        <div class="col-md-12">
-                            <div class="alert alert-danger" role="alert">
-                                Por favor configure primero la firma <a href="/config/firma">aquí</a>
-                            </div>
+                    <div class="row" id="botonesFirma">
+                        <div id="iconVerDeclaracion" class="col-md-6 text-center" data-toggle="tooltip" data-placement="top" title="Ver la declaración" style="line-height: 13px; cursor: pointer;">
+                            <i class="fas fa-file-contract" style="font-size: 32px;"></i>
+                            <br><br><span style="font-size: 13px;">Ver la declaración<span>
+                        </div>
+                        <div id="iconRepetirDeclaracion" class="col-md-6 text-center" data-toggle="tooltip" data-placement="top" title="Registrar nuevamente la declaración" style="line-height: 13px; cursor: pointer;">
+                            <i class="fas fa-redo" style="font-size: 32px"></i>
+                            <br><br><span style="font-size: 13px;">Registrar nuevamente la declaración<span>
                         </div>
                     </div>
-                    <div class="row" id="botonesFirma">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@include('componentes.imparcialidad_conflicto', ['profesiones' => $profesiones, 'cargos' => $cargos])
+
+<!-- Modal -->
+<div class="modal fade" id="modalAprobarDelegado" tabindex="-1" role="dialog" aria-labelledby="modalAprobarDelegadoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 0px 8px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="requerido minilabel" style="margin-top: -14px;">¿Viabilidad delegado?</label>
+                            <br>
+                            <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="delegadoSi" onclick="AprobarDelegado('Si');">Si</button>
+                            <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="delegadoNo" onclick="AprobarDelegado('No');">No</button>
+                        </div>
+                    </div>
+                    <div class="row" id="apruebaBotonesFirma" style="margin-top: 32px; display: none;">
                         <div class="col-md-6">
-                            <button type="button" class="btn btn-light btn-block" onclick="FirmarPlanT(true);"><i class="fas fa-file-pdf"></i> Vista previa</button>
+                            <button type="button" class="btn btn-light btn-block" onclick="FirmarDelegado(true);"><i class="fas fa-file-pdf"></i> Vista previa</button>
                         </div>
                         <div class="col-md-6">
-                            <button type="button" class="btn btn-primary btn-block" onclick="FirmarPlanT(false);"><i class="fas fa-signature"></i> Firmar</button>
+                            <button type="button" class="btn btn-primary btn-block" onclick="FirmarDelegado(false);"><i class="fas fa-signature"></i> Firmar</button>
                         </div>
                     </div>
                 </div>

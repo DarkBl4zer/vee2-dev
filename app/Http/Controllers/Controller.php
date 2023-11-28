@@ -101,6 +101,9 @@ class Controller extends BaseController
         if ($noti->para == 'Delegado') {
             $perfiles = PerfilesModel::where('id_rol', 3)->where('activo', true)->where('id_delegada', $delegada)->get();
         }
+        if ($noti->para == 'Funcionarios') {
+            $perfiles = PerfilesModel::whereIn('id_usuario', $noti->funcionarios)->where('id_rol', 5)->where('activo', true)->where('id_delegada', $delegada)->get();
+        }
         foreach ($perfiles as $item) {
             UsuarioNotificacionModel::create(array(
                 'id_usuario' => $item->id_usuario,

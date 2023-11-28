@@ -7,6 +7,11 @@ Listar Temas
     <link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
     <link href="{{asset('vendor/select2/css/select2.min.css')}}" rel="stylesheet">
     <link rel="stylesheet" href="{{asset('vendor/select2/css/select2-bootstrap4.min.css')}}">
+    <style>
+        .masiva{
+            display: none;
+        }
+    </style>
 @endsection
 @section('Xsidebar')
 @include('sidebar')

@@ -49,11 +49,9 @@
                         </div>
                     </div>
                     <div class="col-md-12 top10">
-                        <div class="input-group">
-                            <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="adjuntoP1" name="adjuntoP1" accept=".pdf">
-                                <label class="custom-file-label" for="adjuntoP1" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Archivo adjunto opcional</label>
-                            </div>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="adjuntoP1" name="adjuntoP1" aria-describedby="adjuntoGroupP1" accept=".pdf" onchange="RemoveInvalid(this.id);">
+                            <label class="custom-file-label" for="adjuntoP1" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Archivo adjunto opcional</label>
                         </div>
                     </div>
                 </div>

@@ -26,7 +26,11 @@ class PlanesGestionModel extends Model
         'archivo_cronograma',
         'archivo_acta',
         'original_acta',
-        'fecha_informe'
+        'fecha_informe',
+        'id_delegado',
+        'fecha_delegado',
+        'id_coordinador',
+        'fecha_coordinador'
     ];
 
     protected $guarded = ['id'];
@@ -60,6 +64,7 @@ class PlanesGestionModel extends Model
                 'profesion' => $item->profesion,
                 'cargo' => $item->cargo,
                 'firmado' => ($item->firmado)?true:false,
+                'conflicto' => ($item->conflicto)?true:false,
             ));
         }
         return $funcionarios;
@@ -76,13 +81,21 @@ class PlanesGestionModel extends Model
     }
 
     public function getNombreestadoAttribute(): String{
-        $estado = ListasModel::where('tipo', 'estados_acciones')->where('valor_numero', $this->estado)->first();
+        $estado = ListasModel::where('tipo', 'estados_plang')->where('valor_numero', $this->estado)->first();
         return '<span class="badge badge-'.$estado->valor_texto.'">'.$estado->nombre.'</span>';
     }
 
     public function getFinformeAttribute(): String{
         $finforme = Carbon::createFromFormat('Y-m-d h:m:s', $this->fecha_informe)->format('d/m/Y');
         return $finforme;
+    }
+
+    public function delegado() : HasOne {
+        return $this->hasOne(UsuariosModel::class, 'id', 'id_delegado');
+    }
+
+    public function coordinador() : HasOne {
+        return $this->hasOne(UsuariosModel::class, 'id', 'id_coordinador');
     }
 
 }

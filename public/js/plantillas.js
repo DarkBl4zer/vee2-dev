@@ -48,7 +48,14 @@ class PlantillaHTML{
             html += `<i class="fas fa-save inputFila${data.id}" data-toggle="tooltip" data-placement="top" title="Guardar" onclick="ConfirmarGuardar(${data.id});"></i>`;
         }
         if (data.conflicto && permisos.conflicto) {
-            if (data.estado == 1) {
+            let nuevo = false;
+            if (data.generar_pg && data.dec_firmada == null) {
+                nuevo = true;
+            }
+            if (!data.generar_pg && data.estado == 1) {
+                nuevo = true;
+            }
+            if (nuevo) {
                 html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearDeclaracion(${data.id});"></i>`;
             } else{
                 html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerDeclaracion(${data.id}, ${data.estado}, '${data.dec_firmada}');"></i>`;
@@ -62,14 +69,14 @@ class PlantillaHTML{
             }
         }
         if (data.generar_pg && data.estado > 1) {
-            html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Vista previa" onclick="VistaPrevia(${data.id}, ${data.estado});"></i>`;
+            html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Vista previa plan de gestión" onclick="VistaPrevia(${data.id}, ${data.estado});"></i>`;
         }
         if (data.next) {
             html += `<i class="fas fa-forward" data-toggle="tooltip" data-placement="top" title="Siguiente" onclick="Siguiente(${data.id});"></i>`;
         }
         if (data.aprobar) {
             if (permisos.aprobar && permisos.aprobar.includes(parseInt(data.estado))) {
-                html += `<i class="fas fa-tasks" data-toggle="tooltip" data-placement="top" title="Aprobar/Rechazar" onclick="ConfirmarAprobar(${data.id});"></i>`;
+                html += `<i class="fas fa-tasks" data-toggle="tooltip" data-placement="top" title="${(data.aprobar_txt)?data.aprobar_txt:'Aprobar/Rechazar'}" onclick="ConfirmarAprobar(${data.id}, ${data.estado});"></i>`;
             }
         }
         return html;

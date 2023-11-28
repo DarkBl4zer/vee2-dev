@@ -27,6 +27,10 @@ return new class extends Migration
             $table->string('archivo_acta', 255)->nullable();
             $table->string('original_acta', 255)->nullable();
             $table->date('fecha_informe')->nullable();
+            $table->unsignedBigInteger('id_delegado')->nullable();
+            $table->string('fecha_delegado', 255)->nullable();
+            $table->unsignedBigInteger('id_coordinador')->nullable();
+            $table->string('fecha_coordinador', 255)->nullable();
             $table->timestamps();
         });
     }
