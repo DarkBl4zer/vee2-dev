@@ -14,7 +14,7 @@
         padding: 5px;
     }
     body{
-        margin: 100px 70px 100px 25px;
+        margin: 65px 70px 80px 25px;
         font-size: 12px;
     }
     #header { position: fixed; left: 0px; top: -25px; right: 0px; height: 150px;}
@@ -42,7 +42,7 @@
             <strong>DECLARACIÓN DE IMPARCIALIDAD Y CONFLICTOS DE INTERÉS</strong>
         </div>
     </div>
-    <div class="row" style="margin-top: 50px;">
+    <div class="row" style="margin-top: 25px;">
         <div class="col-12">
             <strong>1.- IDENTIFICACIÓN DEL SERVIDOR PÚBLICO Y/O CONTRATISTA</strong>
         </div>
@@ -67,7 +67,7 @@
     </div>
     <div class="row">
         <div class="col-12">
-            <p style="text-align: justify;">De conformidad con el principio de imparcialidad señalado en el numeral 3 del artículo 3 de la Ley 1437 de 2011, <strong>{{($declaracion["declara"]==1)?"NO":"SI"}}</strong> tengo conflictos de interés, ni me encuentro incurso (a) en las causales de impedimento establecidas en la Constitución y en la Ley, en especial las estipuladas en el artículo 11 ibídem, para el desarrollo de la acción de prevención y control a la función pública y/o seguimiento, al cual he sido designado (a) o asignado (a), por tal motivo declaro: </p>
+            <p style="text-align: justify;">De conformidad con el principio de imparcialidad señalado en el numeral 3 del artículo 3 de la Ley 1437 de 2011, <strong>{{($declaracion["declara"]==1)?"SI":"NO"}}</strong> tengo conflictos de interés, ni me encuentro incurso (a) en las causales de impedimento establecidas en la Constitución y en la Ley, en especial las estipuladas en el artículo 11 ibídem, para el desarrollo de la acción de prevención y control a la función pública y/o seguimiento, al cual he sido designado (a) o asignado (a), por tal motivo declaro: </p>
             <ol type="a">
                 <li style="text-align: justify;">Que a mi leal saber y entender, no tengo relaciones oficiales, profesionales, personales o financieras con la entidad (sujeta a vigilancia de la Personería de Bogotá, D.C.) y servidores públicos sujetos a examen, ni intereses comerciales, profesionales, financieros y/o económicos en actividades sujetas a control.</li>
                 <li style="text-align: justify;">Asimismo, tampoco tuve un desempeño previo en la ejecución de las actividades y operaciones relacionadas con los sujetos y objetos de control aquí declarados.</li>
@@ -181,7 +181,7 @@
     <div class="row" style="margin-top: 50px;">
         <div class="col-12">
             <p>
-                <img src="{!!$funcionario->imgFirma!!}" width="300px" height="100px">
+                <img src="{!!$funcionario->imgFirma!!}" style="width: 200px;">
                 <br>
                 <strong>Firma del Declarante</strong><br>
                 <strong>Nombre Completo: {{$funcionario->nombre}}</strong><br>

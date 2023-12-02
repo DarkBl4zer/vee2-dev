@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Imports\TemasImport;
 use App\Models\AccionesModel;
 use App\Models\ActasModel;
+use App\Models\DeclaracionesModel;
 use App\Models\DocumentosModel;
 use App\Models\FestivosModel;
 use App\Models\FirmasModel;
@@ -13,6 +14,7 @@ use App\Models\PerfilesModel;
 use App\Models\PermisosModel;
 use App\Models\PlanesGestionModel;
 use App\Models\PlanesTrabajoModel;
+use App\Models\RechazosPtModel;
 use App\Models\RolesModel;
 use App\Models\RolSubMenuModel;
 use App\Models\TemasPModel;
@@ -34,7 +36,22 @@ class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        return $sesion;
+        $temas = TemasPModel::where('id_acta', 1)->where('activo', true)->where('eliminado', false)->get();
+        $idsTemas = array();
+        foreach($temas as $item){
+            array_push($idsTemas, $item->id);
+        }
+        $idsAcciones = array();
+        $accTP = AccionesModel::where('estado', '<', 8)->whereNull('id_temas')->whereIn('id_temap', $idsTemas)->get();
+        $accTS = AccionesModel::where('estado', '<', 8)->whereIn('id_temas', $idsTemas)->get();
+        foreach($accTP as $item){
+            array_push($idsAcciones, $item->id);
+        }
+        foreach($accTS as $item){
+            array_push($idsAcciones, $item->id);
+        }
+        $vaina = DocumentosModel::whereIn('id_accion', $idsAcciones)->where('n_tipo', 1)->get();
+        return $vaina;
     }
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
@@ -50,6 +67,16 @@ class BackendController extends Controller
                 foreach ($festivos as $festivo) {
                     array_push($fechas, Carbon::createFromFormat('Y-m-d H:i:s', $festivo->fecha)->format('d.m.Y'));
                 }
+                $perfil = '';
+                if ($usuario->perfiles[0]->rol->id == 1) {
+                    $perfil = $usuario->perfiles[0]->rol->nombre;
+                }
+                if ($usuario->perfiles[0]->rol->id == 2) {
+                    $perfil = $usuario->perfiles[0]->rol->nombre.">>".$usuario->perfiles[0]->tipo_coord;
+                }
+                if ($usuario->perfiles[0]->rol->id > 2) {
+                    $perfil = $usuario->perfiles[0]->rol->nombre.">>".$usuario->perfiles[0]->apdelegada;
+                }
                 $sesion = array(
                     "id" => $usuario->id,
                     "cedula" => $usuario->cedula,
@@ -61,6 +88,7 @@ class BackendController extends Controller
                     "festivos" => $fechas,
                     "trabajo" => (object)array(
                         "id_perfil" => $usuario->perfiles[0]->id,
+                        'perfil' => $perfil,
                         "id_rol" => $usuario->perfiles[0]->id_rol,
                         "id_delegada" => $usuario->perfiles[0]->id_delegada,
                         "tipo_delegada" => (isset($usuario->perfiles[0]->delegada))?$usuario->perfiles[0]->delegada->tipo:null,
@@ -86,7 +114,18 @@ class BackendController extends Controller
         try {
             $sesion = (object)Session::get('UsuarioVee');
             $perfil = PerfilesModel::where('id',$request->id)->first();
+            $xperfil = '';
+            if ($perfil->rol->id == 1) {
+                $xperfil = $perfil->rol->nombre;
+            }
+            if ($perfil->rol->id == 2) {
+                $xperfil = $perfil->rol->nombre.">>".$perfil->tipo_coord;
+            }
+            if ($perfil->rol->id > 2) {
+                $xperfil = $perfil->rol->nombre.">>".$perfil->apdelegada;
+            }
             $sesion->trabajo->id_perfil = $request->id;
+            $sesion->trabajo->perfil = $xperfil;
             $sesion->trabajo->id_rol = $perfil->id_rol;
             $sesion->trabajo->id_delegada = $perfil->id_delegada;
             $sesion->trabajo->tipo_delegada = (isset($perfil->delegada))?$perfil->delegada->tipo:null;
@@ -204,11 +243,21 @@ class BackendController extends Controller
                     'tipo_coord' => $request->tipo,
                     'usuario_crea' => $sesion->cedula
                 ));
+                if($request->id == $sesion->id){
+                    $this->ActualizarPerfilesSesion($request->id);
+                }
                 return $this->MsjRespuesta(true);
             }
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getTrace());
         }
+    }
+
+    private function ActualizarPerfilesSesion($id){
+        $usuario = UsuariosModel::where('id', $id)->first();
+        $sesion = (object)Session::get('UsuarioVee');
+        $sesion->perfiles = $usuario->perfiles;
+        Session::put('UsuarioVee', $sesion);
     }
 
     public function EliminarPerfil(Request $request){
@@ -445,8 +494,29 @@ class BackendController extends Controller
         DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
-            //TODO Reemplazar el número de acta en cada uno de los temas principales.
-            //DB::commit();
+            $acta = ActasModel::where('id', $request->reemplazo)->first();
+            $temas = TemasPModel::where('id_acta', $request->id)->where('activo', true)->where('eliminado', false)->get();
+            $idsTemas = array();
+            foreach($temas as $item){
+                array_push($idsTemas, $item->id);
+            }
+            $idsAcciones = array();
+            $accTP = AccionesModel::where('estado', '<', 8)->whereNull('id_temas')->whereIn('id_temap', $idsTemas)->get();
+            $accTS = AccionesModel::where('estado', '<', 8)->whereIn('id_temas', $idsTemas)->get();
+            foreach($accTP as $item){
+                array_push($idsAcciones, $item->id);
+            }
+            foreach($accTS as $item){
+                array_push($idsAcciones, $item->id);
+            }
+            DocumentosModel::whereIn('id_accion', $idsAcciones)->where('n_tipo', 1)->update(array(
+                'archivo' => $acta->archivo,
+                'n_original' => $acta->nombre_archivo
+            ));
+            TemasPModel::whereIn('id', $idsTemas)->update(array(
+                'id_acta' => $request->reemplazo
+            ));
+            DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
@@ -521,23 +591,58 @@ class BackendController extends Controller
         try {
             DB::beginTransaction();
             $sesion = (object)$request->sesion;
-            TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('eliminado', false)->update(['activo' =>false, 'eliminado'=>true]);
-            $date = Carbon::now()->format('YmdHisu');
-            $ext = $request->file('inputCargaMasiva')->extension();
-            $request->file('inputCargaMasiva')->storeAs('vee2_temp', 'temas_'.$date.'.'.$ext);
-            Excel::import(new TemasImport($sesion->trabajo->id_delegada), storage_path().'/app/vee2_temp/temas_'.$date.'.'.$ext, null, \Maatwebsite\Excel\Excel::XLSX);
-            DB::commit();
-            return $this->MsjRespuesta(true);
-        } catch (ValidationException $e) {
+            TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->update(['activo' => false, 'eliminado'=> true]);
+            $temasImport = Excel::toCollection(new TemasImport, request()->file('inputCargaMasiva'))[0];
+            $noActas = array();
+            $noTemaP = array();
+            $index = 1;
+            foreach($temasImport as $item){
+                $index++;
+                $acta = ActasModel::where('descripcion', strtoupper(trim($item['acta'])))->where('id_delegada', $sesion->trabajo->id_delegada)->first();
+                if(!is_null($acta)){
+                    $tema_p = TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)
+                                            ->where('nombre', strtoupper(trim($item['tema_principal'])))
+                                            ->where('activo', true)->where('eliminado', false)->first();
+                    $id_tema_p = 0;
+                    if(!is_null($tema_p)){
+                        $id_tema_p = $tema_p->id;
+                    } else{
+                        if(strtoupper(trim($item['tema_principal'])) == ""){
+                            array_push($noTemaP, $index);
+                        } else{
+                            $id_tema_p = TemasPModel::create(array(
+                                'id_delegada' => $sesion->trabajo->id_delegada,
+                                'nombre' => strtoupper(trim($item['tema_principal'])),
+                                'nivel' => 1,
+                                'id_acta' => $acta->id
+                            ))->id;
+                        }
+                    }
+                    TemasPModel::create(array(
+                        'id_delegada' => $sesion->trabajo->id_delegada,
+                        'nombre' => (strtoupper(trim($item['tema_secundario']))=="")?"NO APLICA":strtoupper(trim($item['tema_secundario'])),
+                        'nivel' => 2,
+                        'id_acta' => $acta->id,
+                        'id_padre' => $id_tema_p
+                    ));
+                } else{
+                    array_push($noActas, $item['acta']);
+                }
+            }
+            if(count($noActas) > 0 || count($noTemaP) > 0){
+                DB::rollBack();
+                return response()->json(array(
+                    'estado' => false,
+                    'actas' => $noActas,
+                    'temasp' => $noTemaP
+                ));
+            } else{
+                DB::commit();
+                return $this->MsjRespuesta(true);
+            }
+        } catch (Exception $ex) {
             DB::rollBack();
-            $failures = $e->failures();
-            /*foreach ($failures as $failure) {
-                $failure->row(); // row that went wrong
-                $failure->attribute(); // either heading key (if using heading row concern) or column index
-                $failure->errors(); // Actual error messages from Laravel validator
-                $failure->values(); // The values of the row that has failed.
-            }*/
-            return $this->MsjRespuesta(false, $failures);
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 

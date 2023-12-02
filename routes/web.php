@@ -86,6 +86,11 @@ Route::middleware('vee')->group(function () {
     Route::post('back/firmar_plantrabajo_d', [PlanTrabajoController::class, 'FirmarPlanTrabajoDelegado']);
     Route::post('back/firmar_plantrabajo_c', [PlanTrabajoController::class, 'FirmarPlanTrabajoCoordinador']);
     Route::get('back/previa_plantrabajo', [PlanTrabajoController::class, 'PreviaPlanTrabajo']);
+    Route::post('back/plantrabajo_vigente', [PlanTrabajoController::class, 'PlanTrabajoVigente']);
+    Route::post('back/plantrabajo_rechazo', [PlanTrabajoController::class, 'PlanTrabajoRechazo']);
+    Route::get('back/rechazos_pt', [PlanTrabajoController::class, 'RechazosPlanTrabajo']);
+    Route::post('back/plantrabajo_respuesta', [PlanTrabajoController::class, 'PlanTrabajoRespuesta']);
+    Route::get('back/puede_firmar_delegado', [PlanTrabajoController::class, 'PlanTrabajoPuedeFirmarDelegado']);
 
     /* ******************* PlanesGestion ******************* */
     Route::get('back/planes_gestion', [PlanGestionController::class, 'Planesgestion']);
@@ -96,5 +101,8 @@ Route::middleware('vee')->group(function () {
     Route::post('back/guardar_cronograma', [PlanGestionController::class, 'GuardarCronograma']);
     Route::post('back/obtener_cronograma', [PlanGestionController::class, 'ObtenerCronograma']);
     Route::get('back/previa_plangestion', [PlanGestionController::class, 'PreviaPlanGestion']);
+    Route::post('back/firmar_plangestion_d', [PlanGestionController::class, 'FirmarPlanGestionDelegado']);
+    Route::post('back/firmar_plangestion_e', [PlanGestionController::class, 'FirmarPlanGestionEnlace']);
+    Route::post('back/firmar_plangestion_c', [PlanGestionController::class, 'FirmarPlanGestionCoordinador']);
 
 });

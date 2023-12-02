@@ -12,6 +12,9 @@ function ConfirmarGuardarNuevaActaTP(){
             valido = false;
         }
     });
+    if (!ArchivoValido('inputActa', ['pdf'], 10)) {
+        valido = false;
+    }
     if (valido) {
         $('#confirmacionMsj').html('¿Seguro desea guardar la nueva acta?');
         $('#confirmacionBtn').attr("onclick","GuardarNuevaActaTP();");
@@ -20,12 +23,14 @@ function ConfirmarGuardarNuevaActaTP(){
 }
 
 function GuardarNuevaActaTP(){
-    let datos = new FormData(document.getElementById('formActa'));
-    _RQ('POST','/back/guardar_actatp', datos, function(result) {
-        _MSJ(result.tipo, result.txt, function() {
-            location.reload();
-        });
-    }, true);
+    if (ArchivoValido('inputActa', ['pdf'], 10)) {
+        let datos = new FormData(document.getElementById('formActa'));
+        _RQ('POST','/back/guardar_actatp', datos, function(result) {
+            _MSJ(result.tipo, result.txt, function() {
+                location.reload();
+            });
+        }, true);
+    }
 }
 
 function LimpiarNuevaActaTP(){

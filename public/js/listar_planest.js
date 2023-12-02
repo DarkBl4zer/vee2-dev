@@ -31,10 +31,10 @@ function LlenaTabla(datos) {
     let columns = [
         {title: "#"},
         {title: "Acción(es)"},
+        {title: "Vigente"},
         {title: "Fechas"},
         {title: "Acciones"}
     ];
-    let targets = [3];
     if(!permisos.nuevo){
         columns = [
             {title: "#"},
@@ -43,7 +43,6 @@ function LlenaTabla(datos) {
             {title: "Fechas"},
             {title: "Acciones"}
         ];
-        targets = [4];
     }
     datos.forEach(element => {
         let columna = [];
@@ -51,6 +50,11 @@ function LlenaTabla(datos) {
         columna.push(element.str_acciones);
         if (!permisos.nuevo) {
             columna.push(element.delegada.nombre);
+        }else{
+            columna.push(plantillaHTML.itemVigente({
+                id: element.id,
+                vigente: element.vigente
+            }));
         }
         columna.push(element.fechas);
         let editar = false;
@@ -63,8 +67,10 @@ function LlenaTabla(datos) {
                 estado: element.estado,
                 archivo: element.archivo_firmado,
                 editar: editar,
-                generar: true,
-                aprobar: true
+                generar: (element.vigente == "1")?true:false,
+                aprobar: true,
+                rechazos: element.rechazos[0],
+                r_activo: element.rechazos[1]
             }));
         } else{
             columna.push('');
@@ -72,13 +78,19 @@ function LlenaTabla(datos) {
         filas.push(columna);
         maxVersion = element.version;
     });
+    let clsVig = "";
+    if (permisos.nuevo) {
+        clsVig = "align-middle text-center";
+    }
     dataTable = $('#dataTable').DataTable({
         paging: true,
         info: false,
         columns: columns,
         data: filas,
+        order: [[0, 'desc']],
         columnDefs: [
-            {targets: targets, className: "align-middle text-center", width: "70px"},
+            {targets: [4], className: "align-middle text-center", width: "70px"},
+            {targets: [2], className: clsVig},
             {targets: '_all', className: "align-middle"}
         ],
         language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
@@ -95,7 +107,8 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('td i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    $('.fa-stamp, .fa-file-invoice').tooltip();
     if (ppEditar) {
         $('#btnNuevo').show();
     }
@@ -127,7 +140,7 @@ function LlenaTablaAcciones(datos) {
         {title: "Entidad(es)"}
     ];
     datos.forEach(element => {
-        if (element.estado == 2 || element.estado == 4 || element.estado == 7) {
+        if ((element.estado > 1 && element.estado < 5) || element.estado == 7) {
             let columna = [];
             columna.push(plantillaHTML.itemCheckbox({
                 id: element.id,
@@ -195,7 +208,7 @@ function GuardarNuevoPlan(){
     let datos = {
         arrAcciones,
         id: $('#idCreaEdita').val(),
-        version: maxVersion+1
+        version: parseInt(maxVersion)+1
     };
     _RQ('POST','/back/crear_actualizar_plantrabajo', datos, function(result) {
         _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
@@ -214,14 +227,21 @@ function GenerarFirmar(id) {
         $('#alertNoFirma').show();
         $('#botonesFirma').hide();
     }
-    Mostrar('modalFirmar');
+    let datos = {id};
+    _RQ('GET','/back/puede_firmar_delegado', datos, function(result) {$('#loading').hide();
+        if (!result.estado) {
+            _MSJ('error',`¡Error!, falta la firma de las declaraciones de la(s) accion(es) ${result.sinFirma.join(', ')}.`);
+        } else{
+            Mostrar('modalFirmar');
+        }
+    });
 }
 
 function FirmarPlanT(previa) {
     if (previa) {
         window.open('/back/previa_plantrabajo?id='+$('#idCreaEdita').val(), '_blank');
     } else {
-        if (ValidarCampo('inputActa')) {
+        if (ArchivoValido('inputActa', ['pdf'], 10)) {
             let datos = new FormData(document.getElementById('formActa'));
             datos.append('id', $('#idCreaEdita').val());
             _RQ('POST','/back/firmar_plantrabajo_d', datos, function(result) {
@@ -250,9 +270,11 @@ function AprobarPT(respuesta){
     $('#apruebaPT'+respuesta).removeClass('btn-secondary');
     $('#apruebaPT'+respuesta).addClass('btn-primary');
     if (respuesta == 'Si') {
+        $('#rowMotivo').hide();
         $('#apruebaBotonesFirma').show();
     } else {
         $('#apruebaBotonesFirma').hide();
+        $('#rowMotivo').show();
     }
 }
 
@@ -266,3 +288,78 @@ function FirmarCoorPlanT() {
         });
     });
 }
+
+function VerDetalle(id) {
+    let datos = {id};
+    _RQ('GET','/back/accion_por_id', datos, function(result) {
+        $('#loading').hide();
+        $('#bodyTablaDetalle').html(plantillaHTML.itemsTablaDetalleAccion(result));
+        Mostrar('modalDetalle');
+    });
+}
+
+function Vigente(id) {
+    let datos = {id};
+    _RQ('POST','/back/plantrabajo_vigente', datos, function(result) {
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+            ConsultarPlanes();
+        });
+    });
+}
+
+function GuardarRechazo() {
+    let datos = {
+        id: $('#idCreaEdita').val(),
+        motivo: $('#motivo_rechazo').val()
+    };
+    _RQ('POST','/back/plantrabajo_rechazo', datos, function(result) {
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+            Ocultar('modalAprobar');
+            ConsultarPlanes();
+        });
+    });
+}
+
+function Rechazos(id, respuesta) {
+    if(respuesta == 'sin_nota' || respuesta){
+        $('#nota').hide();
+    }
+    $('#idCreaEdita').val(id);
+    if (respuesta != 'sin_nota' && respuesta) {
+        $('#chatRespuesta').show();
+    } else {
+        $('#chatRespuesta').hide();
+    }
+    let datos = {id};
+    _RQ('GET','/back/rechazos_pt', datos, function(result) {$('#loading').hide();
+        console.log(result);
+        $('#chatRechazo').html(plantillaHTML.lineaTiempoRechazos(result));
+        Mostrar('modalRechazos');
+    });
+}
+
+function EnviarMensaje(enviar) {
+    if (!enviar) {
+        $('#confirmacionMsj').html('¿Seguro desea enviar la respuesta a las observaciones?');
+        $('#confirmacionBtn').attr("onclick","EnviarMensaje(true);");
+        Mostrar('confirmacionModal');
+    } else {
+        let datos = {
+            id: $('#idCreaEdita').val(),
+            respuesta: $('#respuesta').val()
+        };
+        _RQ('POST','/back/plantrabajo_respuesta', datos, function(result) {
+            _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+                ConsultarPlanes();
+                Ocultar('modalRechazos');
+                setTimeout(() => {
+                    Rechazos($('#idCreaEdita').val(), false);
+                }, 1000);
+            });
+        });
+    }
+}
+
+$('#modalRechazos').on('shown.bs.modal', function () {
+    IrA('modalRechazos', 'btnCerrar');
+})

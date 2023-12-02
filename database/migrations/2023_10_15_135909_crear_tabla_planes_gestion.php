@@ -23,9 +23,10 @@ return new class extends Migration
             $table->integer('estado')->default(1);
             $table->boolean('activo')->default(true);
             $table->string('archivo_firmado', 255)->nullable();
-            $table->string('archivo_cronograma', 255)->nullable();
-            $table->string('archivo_acta', 255)->nullable();
-            $table->string('original_acta', 255)->nullable();
+            $table->string('archivo_acta_d', 255)->nullable();
+            $table->string('original_acta_d', 255)->nullable();
+            $table->string('archivo_acta_e', 255)->nullable();
+            $table->string('original_acta_e', 255)->nullable();
             $table->date('fecha_informe')->nullable();
             $table->unsignedBigInteger('id_delegado')->nullable();
             $table->string('fecha_delegado', 255)->nullable();

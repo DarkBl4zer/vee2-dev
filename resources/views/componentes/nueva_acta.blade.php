@@ -25,6 +25,7 @@
                                 <label class="custom-file-label" for="inputActa" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Seleccionar archivo</label>
                             </div>
                         </div>
+                        <div class="invalid-feedback" id="MinputActa" style="font-size: 11px;"></div>
                     </div>
                 </div>
             </form>

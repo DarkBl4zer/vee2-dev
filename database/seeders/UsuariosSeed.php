@@ -13,7 +13,7 @@ class UsuariosSeed extends Seeder
     public function run(): void
     {
         $datos = [
-            array('cedula' => '1010', 'nombre' => 'ADMINISTRADOR ADMINISTRADOR', 'email' => 'fdmanjarres@personeriabogota.gov.co'),
+            array('cedula' => '1010', 'nombre' => 'FERNANDO DARÍO MANJARRÉS PATERNINA', 'email' => 'fdmanjarres@personeriabogota.gov.co'),
             array('cedula' => '52883582', 'nombre' => 'NINI YOHANA LOPEZ BENAVIDES', 'email' => 'nylopez@personeriabogota.gov.co')
         ];
         for ($i=0; $i < count($datos); $i++) {

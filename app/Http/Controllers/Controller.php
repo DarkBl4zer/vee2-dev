@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ConfiguracionesModel;
 use App\Models\PerfilesModel;
 use App\Models\UsuarioNotificacionModel;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -101,6 +102,9 @@ class Controller extends BaseController
         if ($noti->para == 'Delegado') {
             $perfiles = PerfilesModel::where('id_rol', 3)->where('activo', true)->where('id_delegada', $delegada)->get();
         }
+        if ($noti->para == 'Enlace') {
+            $perfiles = PerfilesModel::where('id_rol', 4)->where('activo', true)->where('id_delegada', $delegada)->get();
+        }
         if ($noti->para == 'Funcionarios') {
             $perfiles = PerfilesModel::whereIn('id_usuario', $noti->funcionarios)->where('id_rol', 5)->where('activo', true)->where('id_delegada', $delegada)->get();
         }
@@ -113,6 +117,26 @@ class Controller extends BaseController
                 'url' => $noti->url
             ));
         }
+    }
+
+    function DescontarDiasHabiles($fecha, $dias){
+        $sesion = (object)Session::get('UsuarioVee');
+        $fecha_inicio = Carbon::createFromFormat('Y-m-d H:i:s', $fecha);
+        $x = 0;
+        $fecha_fin = null;
+        $diaTemp = $fecha_inicio;
+        while($x < $dias) {
+            $diaTemp = $fecha_inicio->subDay();
+            if(!$diaTemp->isWeekend()){
+                if(!in_array($diaTemp->format('d.m.Y'), $sesion->festivos)){
+                    $x++;
+                    if($x == $dias){
+                        $fecha_fin = $diaTemp->format('Y-m-d');
+                    }
+                }
+            }
+        }
+        return $fecha_fin;
     }
 
 }

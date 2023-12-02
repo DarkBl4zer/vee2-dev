@@ -5,10 +5,12 @@ $(document).ready(function() {
     ConsultarActas();
 });
 
+var actas_tp = [];
 function ConsultarActas(){
     $('#loading').show();
     LimpiarTabla('dataTable');
     _RQ('GET','/back/actas_tp', null, function(result) {$('#loading').hide();
+        actas_tp = result;
         LlenaTabla(result);
     });
 }
@@ -97,18 +99,19 @@ function Activar(id, activar){
 }
 
 function Reemplazar(id) {
-    $('#actaReemplazo').find('option').show();
-    $('#op'+id).hide();
+    let ops = '<option value="">...</option>';
+    actas_tp.forEach(element => {
+        if (element.id != id) {
+            ops += `<option value="${element.id}">${element.descripcion}</option>`;
+        }
+    });
+    $('#actaReemplazo').html(ops);
     $('#btnGuardarReemplazo').attr('onclick', 'ConfirmarReemplazarActa('+id+');');
     Mostrar('modalReemplazar');
 }
 
 function ConfirmarReemplazarActa(id){
-    let valido = true;
-    if (!ValidarCampo('actaReemplazo')) {
-        valido = false;
-    }
-    if (valido) {
+    if (ValidarCampo('actaReemplazo')) {
         $('#confirmacionMsj').html('¿Seguro desea reemplazar el acta?');
         $('#confirmacionBtn').attr("onclick","Guardar("+id+");");
         Mostrar('confirmacionModal');

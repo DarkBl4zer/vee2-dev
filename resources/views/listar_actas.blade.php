@@ -50,6 +50,8 @@ Listar Temas
         <div class="modal-body">
             <div class="row">
                 <div class="col-12">
+                    <select class="form-control" id="actaReemplazo">
+                    </select>
                 </div>
             </div>
         </div>

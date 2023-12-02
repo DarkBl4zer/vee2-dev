@@ -54,6 +54,12 @@ Listar Temas
                 <i class="fas fa-file-upload" style="font-size: 30px; cursor:pointer;" onclick="ConfirmarCargaMasiva();" data-toggle="tooltip" data-placement="top" title="Cargar"></i>
             </div>
         </div>
+        <div class="row">
+            <div class="col-8"></div>
+            <div class="col-4 text-center">
+                <div class="invalid-feedback" id="MinputCargaMasiva" style="font-size: 11px;"></div>
+            </div>
+        </div>
     </div>
     <div class="card-body" style="position: relative;">
         <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nuevo tema" onclick="Nuevo();" style="font-size: 24px; cursor: pointer; display: none;"></i>
@@ -85,6 +91,31 @@ Listar Temas
         <option value="{{$item->id}}">{{$item->nombre}}</option>
         @endforeach
     </select>
+</div>
+
+<!-- Modal Errores Importacion -->
+<div class="modal fade" id="modalErrores" tabindex="-1" role="dialog" aria-labelledby="modalErroresLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+        <div class="modal-header" style="padding: 5px 10px 5px 10px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 10px;"></i> Errores carga masiva
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body" style="padding: 5px 10px 5px 10px;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm-12" style="font-size: 13px;" id="erroresMsj">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 5px 10px 5px 10px; margin: 0 auto;">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" style="padding: 2px 5px 2px 5px;">Cancelar</button>
+        </div>
+        </div>
+    </div>
 </div>
 
 @endsection

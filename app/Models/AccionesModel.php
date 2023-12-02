@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use Brick\Math\BigInteger;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Mockery\Matcher\Any;
+use Ramsey\Uuid\Type\Integer;
 
 class AccionesModel extends Model
 {
@@ -28,7 +31,7 @@ class AccionesModel extends Model
         'id_padre'
     ];
     protected $guarded = ['id'];
-    protected $appends = ['numero', 'entidades', 'delegada', 'fechas', 'archivoacta', 'nombreestado', 'actuacion', 'padre'];
+    protected $appends = ['numero', 'entidades', 'delegada', 'fechas', 'archivoacta', 'nombreestado', 'actuacion', 'padre', 'idPT'];
 
     public function getNumeroAttribute(): String{
         $actuaciones = ['', 'APC', 'SEG', 'SEGD', 'REVC'];
@@ -71,8 +74,13 @@ class AccionesModel extends Model
     }
 
     public function getNombreestadoAttribute(): String{
-        $estado = ListasModel::where('tipo', 'estados_acciones')->where('valor_numero', $this->estado)->first();
-        return '<span class="badge badge-'.$estado->valor_texto.'">'.$estado->nombre.'</span>';
+
+        if ($this->estado == 1 and $this->created_at != $this->updated_at) {
+            return '<span class="badge badge-info">EDITADO</span>';
+        } else{
+            $estado = ListasModel::where('tipo', 'estados_acciones')->where('valor_numero', $this->estado)->first();
+            return '<span class="badge badge-'.$estado->valor_texto.'">'.$estado->nombre.'</span>';
+        }
     }
 
     public function getActuacionAttribute(): String{
@@ -90,6 +98,17 @@ class AccionesModel extends Model
             );
         }
         return $padre;
+    }
+
+    public function getIdPTAttribute(){
+        $id = null;
+        $ptAcciones = PlaTAccionModel::where('id_accion', $this->id)->get();
+        foreach ($ptAcciones as $item) {
+            if($item->plantrabajo->vigente == true){
+                $id = $item->plantrabajo->id;
+            }
+        }
+        return $id;
     }
 
 }

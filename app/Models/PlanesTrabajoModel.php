@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Calculation\Logical\Boolean;
 
 class PlanesTrabajoModel extends Model
 {
@@ -29,7 +30,7 @@ class PlanesTrabajoModel extends Model
         'fecha_coordinador'
     ];
     protected $guarded = ['id'];
-    protected $appends = ['str_acciones', 'fechas', 'nombreestado', 'delegada'];
+    protected $appends = ['str_acciones', 'fechas', 'nombreestado', 'delegada', 'rechazos'];
 
     public function acciones() : BelongsToMany {
         return $this->belongsToMany(AccionesModel::class, 'vee2_plan_t_accion', 'id_plantrabajo', 'id_accion');
@@ -39,7 +40,9 @@ class PlanesTrabajoModel extends Model
         $pt_acc = PlaTAccionModel::where('id_plantrabajo', $this->id)->get();
         $string = '<ul style="padding-left: 15px;">';
         foreach ($pt_acc as $item) {
-            $string .= '<li>['.$item->accion->numero.'] '.Str::limit($item->accion->titulo, 150, ' (...)').' <i class="fas fa-stamp" data-toggle="tooltip" data-placement="top" title="Documentos" onclick="DocumentosAccion('.$item->id.');" style="font-size: 14px;"></i></li>';
+            $string .= '<li>['.$item->accion->numero.'] '.Str::limit($item->accion->titulo, 150, ' (...)').' ';
+            $string .= '<i class="fas fa-stamp" data-toggle="tooltip" data-placement="top" title="Documentos" onclick="DocumentosAccion('.$item->accion->id.');" style="font-size: 14px;"></i>';
+            $string .= '<i class="fas fa-file-invoice" data-toggle="tooltip" data-placement="top" title="Ver detalle" onclick="VerDetalle('.$item->accion->id.');" style="font-size: 14px;"></i></li>';
         }
         $string .= '</ul>';
         return $string;
@@ -52,8 +55,13 @@ class PlanesTrabajoModel extends Model
     }
 
     public function getNombreestadoAttribute(): String{
-        $estado = ListasModel::where('tipo', 'estados_plant')->where('valor_numero', $this->estado)->first();
-        return '<span class="badge badge-'.$estado->valor_texto.'">'.$estado->nombre.'</span>';
+        $retorno  = '<span class="badge badge-danger">RECHAZADO</span>';
+        $rechazos = RechazosPtModel::where('id_plant', $this->id)->where('activo', true)->count();
+        if ($rechazos == 0) {
+            $estado = ListasModel::where('tipo', 'estados_plant')->where('valor_numero', $this->estado)->first();
+            $retorno = '<span class="badge badge-'.$estado->valor_texto.'">'.$estado->nombre.'</span>';
+        }
+        return $retorno;
     }
 
     public function getDelegadaAttribute(): Array{
@@ -61,6 +69,15 @@ class PlanesTrabajoModel extends Model
         return array(
             'nombre' => $delegada->nombre,
             'tipo' => $delegada->tipo
+        );
+    }
+
+    public function getRechazosAttribute(): Array{
+        $rechazos = RechazosPtModel::where('id_plant', $this->id)->count();
+        $activos = RechazosPtModel::where('id_plant', $this->id)->where('activo', true)->count();
+        return array(
+            ($rechazos>0)?true:false,
+            ($activos>0)?true:false
         );
     }
 

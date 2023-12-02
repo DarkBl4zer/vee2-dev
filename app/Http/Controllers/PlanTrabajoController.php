@@ -14,6 +14,7 @@ use App\Models\PerfilesModel;
 use App\Models\PlanesGestionModel;
 use App\Models\PlanesTrabajoModel;
 use App\Models\PlaTAccionModel;
+use App\Models\RechazosPtModel;
 use App\Models\TemasPModel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -97,8 +98,8 @@ class PlanTrabajoController extends Controller
             $new["id_actuacion"]=$request->id_actuacion;
             $new["id_temap"]=$request->id_temap;
             $new["id_temas"]=$request->id_temas;
-            $new["titulo"]=$request->titulo;
-            $new["objetivo_general"]=$request->objetivo_general;
+            $new["titulo"]=strtoupper($request->titulo);
+            $new["objetivo_general"]=strtoupper($request->objetivo_general);
             $new["fecha_plangestion"]=Carbon::createFromFormat('d/m/Y', $request->fecha_plangestion)->format('Y-m-d');
             $new["numero_profesionales"]=$request->numero_profesionales;
             $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');
@@ -106,7 +107,9 @@ class PlanTrabajoController extends Controller
             $new["id_padre"]=$request->id_padre;
             $tema = TemasPModel::whereId($request->id_temas)->first();
             if ($request->id != 0) {
-                AccionesModel::where('id', $request->id)->update($new);
+                $new["estado"]=1;
+                $accion = AccionesModel::where('id', $request->id)->first();
+                $accion->update($new);
                 AccionEntidadModel::where('id_accion', $request->id)->update(['activo' => false]);
                 foreach ($request->entidades as $item) {
                     AccionEntidadModel::create(array(
@@ -121,6 +124,7 @@ class PlanTrabajoController extends Controller
                     'usuario' => $sesion->nombre,
                     'id_usuario' => $sesion->id,
                 ));
+                PlanesTrabajoModel::where('id', $accion->idPT)->update(array('estado' => 1));
             } else{
                 $new["id_delegada"]=$sesion->trabajo->id_delegada;
                 $new["year"]=date("Y");
@@ -200,7 +204,6 @@ class PlanTrabajoController extends Controller
             DeclaracionTablaModel::insert($insert);
             $insert = $this->InsertarTabla(2, $declaracion->id, $request->arrTabla2);
             DeclaracionTablaModel::insert($insert);;
-            DB::commit();
             if(!$request->previa){
                 AccionesModel::where('id', $request->id_accion)->update([
                     'estado' => 2
@@ -245,8 +248,10 @@ class PlanTrabajoController extends Controller
                         $this->Notificar($noti);
                     }
                 }
+                DB::commit();
                 return $this->MsjRespuesta(true);
             } else{
+                DB::commit();
                 return response()->json(array('id' => $declaracion->id));
             }
         } catch (Exception $ex) {
@@ -295,7 +300,7 @@ class PlanTrabajoController extends Controller
 
         $perfil = null;
         foreach ($sesion->perfiles as $item) {
-            if ($item->id = $sesion->trabajo->id_perfil) {
+            if ($item->id == $sesion->trabajo->id_perfil) {
                 $perfil = $item;
             }
         }
@@ -359,7 +364,7 @@ class PlanTrabajoController extends Controller
                 foreach ($accionespt as $acc) {
                     if($item->id == $acc->id_accion){
                         $item->checked = true;
-                        array_push($arr_select, $acc->id_accion);
+                        array_push($arr_select, intval($acc->id_accion));
                     }
                 }
             }
@@ -384,6 +389,7 @@ class PlanTrabajoController extends Controller
                 }
                 PlaTAccionModel::where('id_plantrabajo', $request->id)->delete();
             } else{
+                PlanesTrabajoModel::where('year', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->update(array('vigente' => false));
                 $idModelo = PlanesTrabajoModel::create(array(
                     'year' => date("Y"),
                     'id_delegada' => $sesion->trabajo->id_delegada,
@@ -406,6 +412,7 @@ class PlanTrabajoController extends Controller
     }
 
     public function FirmarPlanTrabajoDelegado(Request $request){
+        DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
             $date = Carbon::now()->format('YmdHisu');
@@ -413,20 +420,26 @@ class PlanTrabajoController extends Controller
                 $request->file('inputActa')->storeAs('vee2_cargados', 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension());
                 $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
                 $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+                $estadoActual = $plantrabajo->estado;
                 $plantrabajo->update(array(
                     'estado' => 2,
                     'archivo_firmado' => $archivo_firmado,
+                    'archivo_acta' => 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension(),
+                    'original_acta' => $request->file('inputActa')->getClientOriginalName(),
                     'id_delegado' => $sesion->id,
                     'fecha_delegado' => Carbon::now()->format('d/m/Y')
                 ));
-                $noti = (object)array(
-                    'para' => 'Coordinador',
-                    'tipo' => 'primary',
-                    'texto' => 'Solicitud de aprobación plan de trabajo',
-                    'url' => '/planest/listar'
-                );
-                $this->Notificar($noti);
+                if ($estadoActual == 1) {
+                    $noti = (object)array(
+                        'para' => 'Coordinador',
+                        'tipo' => 'primary',
+                        'texto' => 'Solicitud de aprobación plan de trabajo',
+                        'url' => '/planest/listar'
+                    );
+                    $this->Notificar($noti);
+                }
                 foreach ($plantrabajo->acciones as $accion) {
+                    $accion->update(array('estado' => 14));
                     $documento1 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 3)->first();
                     if($documento1 != null){
                         $documento1->update(array(
@@ -450,14 +463,17 @@ class PlanTrabajoController extends Controller
                         ));
                     }
                 }
+                DB::commit();
                 return $this->MsjRespuesta(true);
             }
         } catch (Exception $ex) {
+            DB::rollBack();
             return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 
     public function FirmarPlanTrabajoCoordinador(Request $request){
+        DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
             $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
@@ -501,8 +517,10 @@ class PlanTrabajoController extends Controller
                 }
                 $accion->update(array('estado' => 5));
             }
+            DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
+            DB::rollBack();
             return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
@@ -572,6 +590,123 @@ class PlanTrabajoController extends Controller
             return true;
         } else{
             return false;
+        }
+    }
+
+    public function PlanTrabajoVigente(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            PlanesTrabajoModel::where('year', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->update(array('vigente' => false));
+            PlanesTrabajoModel::where('id', $request->id)->update(array(
+                'vigente' => true,
+                'estado' => 1
+            ));
+            $ptAccions = PlaTAccionModel::where('id_plantrabajo', $request->id)->get();
+            foreach($ptAccions as $item){
+                $item->accion->update(array('estado' => 3));
+            }
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function PlanTrabajoRechazo(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+            $plantrabajo->update(array('estado' => 3));
+            $ptAccions = PlaTAccionModel::where('id_plantrabajo', $request->id)->get();
+            foreach($ptAccions as $item){
+                $item->accion->update(array('estado' => 4));
+            }
+            RechazosPtModel::create(array(
+                'id_plant' => $request->id,
+                'fecha_rechazo' => Carbon::now(),
+                'texto_rechazo' => $request->motivo,
+                'nombre_rechazo' => '<span class="de_chat">'.$sesion->nombre.'</span><br>'.$sesion->trabajo->perfil
+            ));
+            $noti = (object)array(
+                'para' => 'Delegado',
+                'id_delegada' => $plantrabajo->id_delegada,
+                'tipo' => 'danger',
+                'texto' => 'El Plan de trabajo no fue aprobado',
+                'url' => '/planest/listar'
+            );
+            $this->Notificar($noti);
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function RechazosPlanTrabajo(Request $request){
+        try {
+            $rechazos = RechazosPtModel::where('id_plant', $request->id)->orderBy('activo')->orderBy('id', 'desc')->get();
+            return response()->json($rechazos);
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function PlanTrabajoRespuesta(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+            $plantrabajo->update(array('estado' => 4));
+            $ptAccions = PlaTAccionModel::where('id_plantrabajo', $request->id)->get();
+            foreach($ptAccions as $item){
+                $item->accion->update(array('estado' => 14));
+            }
+            $rechazo = RechazosPtModel::where('id_plant', $request->id)->where('activo', true)->first();
+            $rechazo->update(array(
+                'activo' => false,
+                'fecha_respuesta' => Carbon::now(),
+                'texto_respuesta' => $request->respuesta,
+                'nombre_respuesta' => '<span class="de_chat">'.$sesion->nombre.'</span><br>'.$sesion->trabajo->perfil
+            ));
+            $noti = (object)array(
+                'para' => 'Coordinador',
+                'tipo' => 'primary',
+                'texto' => 'Ajustes realizados al plan de trabajo',
+                'url' => '/planest/listar'
+            );
+            $this->Notificar($noti);
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function PlanTrabajoPuedeFirmarDelegado(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+            $arrSinFirma = array();
+            foreach ($plantrabajo->acciones as $accion) {
+                if($accion->estado == 1){
+                    array_push($arrSinFirma, $accion->numero);
+                }
+            }
+            $estado = true;
+            if(count($arrSinFirma)>0){
+                $estado = false;
+            }
+            return response()->json(array(
+                'estado' => $estado,
+                'sinFirma' => $arrSinFirma
+            ));
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getTrace());
         }
     }
 

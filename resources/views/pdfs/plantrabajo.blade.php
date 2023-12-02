@@ -113,7 +113,7 @@
                 <tr>
                     <td>Firma Personero(a) Delegado(a) o Personero(a)  Local:</td>
                     <td style="width: 500px; border-bottom: solid 1px; padding-left: 20px;">
-                        <img src="{!!$datos->delegado_firma!!}" width="300px" height="100px">
+                        <img src="{!!$datos->delegado_firma!!}" style="width: 200px;">
                     </td>
                 </tr>
             </table>
@@ -122,9 +122,9 @@
     <div class="row" style="margin-top: 50px; width: 95%;">
         <div class="col-md-12">
             @php
-                $tipoDelegada = "PD PARA LA COORDINACIÓN DE PREVENCIÓN Y CONTROL A LA FUNCIÓN PÚBLICA";
+                $tipoDelegada = "PD PARA LA COORDINACIÓN DE GESTIÓN DE PERSONERÍAS LOCALES";
                 if ($PTA->plantrabajo->delegada['tipo'] == 1) {
-                    $tipoDelegada = "PD PARA LA COORDINACIÓN DE GESTIÓN DE PERSONERÍAS LOCALES";
+                    $tipoDelegada = "PD PARA LA COORDINACIÓN DE PREVENCIÓN Y CONTROL A LA FUNCIÓN PÚBLICA";
                 }
             @endphp
             PERSONERÍA DELEGADA PARA LA COORDINACIÓN DE: <strong>{{$tipoDelegada}}</strong>
@@ -164,7 +164,7 @@
                 <tr>
                     <td>Firma Personero(a) Delegado(a) para la Coordinación:</td>
                     <td style="width: 500px; border-bottom: solid 1px; padding-left: 20px;">
-                        <img src="{!!$datos->coordinador_firma!!}" width="300px" height="100px">
+                        <img src="{!!$datos->coordinador_firma!!}" style="width: 200px;">
                     </td>
                 </tr>
             </table>

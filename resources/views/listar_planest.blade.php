@@ -104,6 +104,7 @@ Planes de trabajo
                                     </form>
                                 </div>
                             </div>
+                            <div class="invalid-feedback" id="MinputActa" style="font-size: 11px;"></div>
                         </div>
                     </div>
                     <div class="row" id="botonesFirma" style="margin-top: 32px;">
@@ -147,9 +148,88 @@ Planes de trabajo
                             <button type="button" class="btn btn-primary btn-block" onclick="FirmarCoorPlanT();"><i class="fas fa-signature"></i> Firmar</button>
                         </div>
                     </div>
+                    <div class="row" id="rowMotivo" style="margin-top: 32px; display: none;">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="titulo">Motivo / Observaciones <sup style="color: var(--danger)">*</sup></label>
+                                <textarea class="form-control" id="motivo_rechazo" rows="3" maxlength="2000"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary btn-block" onclick="GuardarRechazo();">Guardar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Accion-->
+<div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog" aria-labelledby="modalDetalleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetalleLabel">Detalle acción</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <table id="tablaDetalle" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Campo</th>
+                                    <th scope="col">Dato registrado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyTablaDetalle">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" >Cerrar</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Accion-->
+<div class="modal fade" id="modalRechazos" tabindex="-1" role="dialog" aria-labelledby="modalRechazosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header" style="padding: 4px 8px;">
+          <h6 class="modal-title" id="modalRechazosLabel">Motivo / Observaciones</h6>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid" id="chatRechazo">
+            </div>
+            <div class="container-fluid send_chat" id="chatRespuesta" style="display: none;">
+                <div class="row">
+                    <div class="col-md-11">
+                        <textarea class="form-control" id="respuesta" rows="2" maxlength="2000" style="font-size: 13px;"></textarea>
+                    </div>
+                    <div class="col-md-1 vertical_col">
+                        <i class="fab fa-telegram-plane" onclick="EnviarMensaje(false);" style="font-size: 24px; cursor: pointer;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 4px;">
+            <span id="nota" style="margin: 0px 38px; font-size: 10px; position: absolute; left: 0px; color: var(--info)">Para responder a las observaciones realice las modificaciones y firme nuevamente el plan de trabajo.</span>
+            <button id="btnCerrar" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" >Cerrar</button>
+        </div>
+      </div>
     </div>
 </div>
 

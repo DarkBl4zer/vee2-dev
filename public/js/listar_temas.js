@@ -205,7 +205,11 @@ function Guardar(id){
     }
     _RQ('POST','/back/crear_actualizar_tema', datos, function(result) {
         _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
-            ConsultarTemas();
+            if($('#tipoTema').val() == 1){
+                location.reload();
+            } else{
+                ConsultarTemas();
+            }
         });
     });
 }
@@ -221,18 +225,35 @@ function Editar(id){
 }
 
 function ConfirmarCargaMasiva(){
-    if (ValidarCampo('inputCargaMasiva')) {
-        $('#confirmacionMsj').html('¿Seguro desea realizar la carga masiva de temas?');
-        $('#confirmacionBtn').attr("onclick","CargaMasiva();");
-        Mostrar('confirmacionModal');
+    if (ArchivoValido('inputCargaMasiva', ['xlsx'], 10)) {
+        if (ValidarCampo('inputCargaMasiva')) {
+            $('#confirmacionMsj').html('¿Seguro desea realizar la carga masiva de temas?');
+            $('#confirmacionBtn').attr("onclick","CargaMasiva();");
+            Mostrar('confirmacionModal');
+        }
     }
 }
 
 function CargaMasiva(){
+    if (ArchivoValido('inputCargaMasiva', ['xlsx'], 10)) {
     let datos = new FormData(document.getElementById('formCargaMasiva'));
-    _RQ('POST','/back/carga_masiva_temas', datos, function(result) {
-        _MSJ(result.tipo, result.txt, function() {
-            location.reload();
-        });
-    }, true);
+        _RQ('POST','/back/carga_masiva_temas', datos, function(result) {
+            if (!result.estado) {
+                let msj = `<p></p>El archivo de carga masiva contiene los siguientes errores: `;
+                if(result.actas.length > 0){
+                    msj += `<br>La(s) siguiente(s) acta(s) no existe(n) en el sistema: ${result.actas.join(', ')}`
+                }
+                if(result.temasp.length > 0){
+                    msj += `<br>Se encontraron temas principales en blanco en la(s) fila(s): ${result.temasp.join(', ')}</p>`
+                }
+                $('#erroresMsj').html(msj);
+                Mostrar('modalErrores');
+                $('#loading').hide();
+            }else{
+                _MSJ(result.tipo, result.txt, function() {
+                    location.reload();
+                });
+            }
+        }, true);
+    }
 }

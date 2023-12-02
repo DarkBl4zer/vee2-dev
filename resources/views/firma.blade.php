@@ -11,7 +11,7 @@ Configurar Firma
 @section('Xhead')
 @endsection
 @section('Xcontent')
-<div class="col-xl-4">
+<div style="width: 690px;">
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <h6 class="m-0 font-weight-bold text-primary">Configurar firma</h6>
@@ -25,7 +25,7 @@ Configurar Firma
                             <div class="row no-gutters align-items-center">
                                 <div class="col mr-">
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        <canvas src="{{asset('img/noFirma.jpg')}}" width="300px" height="100px" id="canvas"/>
+                                        <canvas src="{{asset('img/noFirma.jpg')}}" width="600px" height="200px" id="canvas">
                                     </div>
                                 </div>
                             </div>
@@ -50,13 +50,13 @@ Configurar Firma
             </div>
             <!-- Content Row -->
             <div class="row" style="margin-top: 15px;">
-                <div class="col-9">
+                <div class="col-10">
                     <div class="form-group">
                         <label for="escala">Escala de la imagen</label>
-                        <input type="range" class="form-control-range" id="escala" value="100">
+                        <input type="range" class="form-control-range" id="escala" value="50">
                     </div>
                 </div>
-                <div class="col-3 text-center" style="margin-top: 24px;">
+                <div class="col-2 text-center" style="margin-top: 24px;">
                     <strong id="escalaN">100%</strong>
                 </div>
             </div>

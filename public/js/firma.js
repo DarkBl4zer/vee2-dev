@@ -8,8 +8,8 @@ $(document).ready(function() {
         }
     } else{
         $('#escala').val(backFirma.escFirma);
-        $('#escalaN').html(backFirma.escFirma+"%");
-        let escala = backFirma.escFirma / 100;
+        $('#escalaN').html((backFirma.escFirma * 2)+"%");
+        let escala = (backFirma.escFirma / 100) * 2;
         img.src = backFirma.inpFirma;
         img.onload = function() {
             ctx.drawImage(img, 0, 0, img.width*escala, img.height*escala);
@@ -38,18 +38,18 @@ function GuardarFirma(){
 }
 
 $('#escala').on('input', function (event) {
-    let escala = event.target.value / 100;
-    ctx.clearRect(0, 0, 300, 100);
+    let escala = (event.target.value / 100) * 2;
+    ctx.clearRect(0, 0, 600, 200);
     ctx.fillStyle = "rgb(255,255,255)";
-    ctx.fillRect(0,0,300,100);
+    ctx.fillRect(0,0,600,200);
     ctx.drawImage(img, 0, 0, img.width*escala, img.height*escala);
     ctx.drawImage(noCopiar, 0, 0, noCopiar.width, noCopiar.height);
-    $('#escalaN').html(event.target.value+"%");
+    $('#escalaN').html((event.target.value * 2)+"%");
 });
 
 $('#inputFirma').on('click', function (event) {
-    ctx.clearRect(0, 0, 300, 100);
-    $('#escala').val(100);
+    ctx.clearRect(0, 0, 600, 200);
+    $('#escala').val(50);
     $('#escalaN').html("100%");
 });
 

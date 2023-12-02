@@ -4,6 +4,12 @@ $(document).ready(function(){
     ConsultarNotificaciones();
 });
 
+function _HOY() {
+    var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
+    var localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+    return localISOTime.split('T')[0];
+}
+
 function ConsultarNotificaciones() {
     let datos = {todo:false};
     _RQ('GET','/back/notificaciones', datos, function(result) {
@@ -146,15 +152,26 @@ function LimpiarRequerido(requeridos){
     });
 }
 
-function FiltrarCaracteres(id, tipo){
+function CaracteresRestantes(ent, sal, max){
+    let restantes = max - ent.length;
+    $('#'+sal).html('<i class="fas fa-align-left"></i> ' + restantes);
+}
+
+function FiltrarCaracteres(id, tipo, cont = false){
     let valor = $('#'+id).val();
+    let out = "";
     if (tipo == 'valorItem') {
-        $('#'+id).val(valor.replace(/\W/g, '').toUpperCase());
+        out = valor.replace(/\W/g, '').toUpperCase();
     }
     if (tipo == 'itemLista') {
-        $('#'+id).val(valor.replace(/[^\wÀ-ú0-9 -]/g, '').toUpperCase());
+        out = valor.replace(/[^\wÀ-ú0-9 -]/g, '').toUpperCase();
     }
     ValidarCampo(id);
+    $('#'+id).val(out);
+    if (cont) {
+        let cuenta = cont - out.length;
+        $('#cont_' + id).html('<i class="fas fa-align-left"></i> ' + cuenta);
+    }
 }
 
 function FiltrarCaracteresOLD(idx, tipo, cont = false) {
@@ -210,7 +227,7 @@ function SetCampoFecha(idx, min = false, max = false){
         jQuery(this).find('.xdsoft_date.xdsoft_weekend').addClass('xdsoft_disabled');
     };
 	calendario.disabledDates = festivos;
-	calendario.formatDate ='d.m.Y';
+	calendario.formatDate ='Y-m-d';
     jQuery.datetimepicker.setLocale('es');
     $('#'+idx).datetimepicker(calendario);
 }
@@ -225,4 +242,39 @@ function DocumentosAccion(id) {
             $('#loading').hide();
         }
     });
+}
+
+function IrA(modal, id) {
+    $('#'+modal).animate({scrollTop: $('#'+id).offset().top}, 500);
+}
+
+
+function ArchivoValido(id, tipos, peso){
+    var valida = true;
+    var fileInput = $('#' + id);
+    var maxSize = peso * 1000000;
+    if(fileInput.get(0).files.length){
+        var extArchivo = fileInput.get(0).files[0].name.split('.').pop().toLowerCase();
+        var fileSize = fileInput.get(0).files[0].size;
+        if(fileSize > maxSize){
+            $("#M" + id).html('El tamaño del archivo debe ser máximo ' + peso + 'mb.');
+            $("#M" + id).show();
+            valida = false;
+        }
+
+        var noEncontrado = true;
+        for (let i = 0; i < tipos.length; i++) {
+            if (extArchivo == tipos[i]) {
+                noEncontrado = false;
+            }
+        }
+        if (noEncontrado) {
+            $("#M" + id).html('El tipo de archivo seleccionado no es correcto, por favor seleccione un archivo ' + tipos.join(' o ') + '.');
+            $("#M" + id).show();
+            valida = false;
+        }
+    } else{
+        valida = false;
+    }
+    return valida;
 }

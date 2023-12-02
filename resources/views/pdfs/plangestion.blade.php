@@ -146,7 +146,7 @@
         {!!$especificos!!}
     </div>
 
-    <div class="page-break"></div>
+    {{-- <div class="page-break"></div> --}}
     <div class="titulo_div">
         <strong>METODOLOGÍA</strong>
     </div>
@@ -154,7 +154,7 @@
         {!!$metodologia!!}
     </div>
 
-    <div class="page-break"></div>
+    {{-- <div class="page-break"></div> --}}
     <div class="titulo_div">
         <strong>MUESTRA Y/O MEDIO DE CONTRASTE</strong>
     </div>
@@ -162,7 +162,7 @@
         {!!$muestra!!}
     </div>
 
-    <div class="page-break"></div>
+    {{-- <div class="page-break"></div> --}}
     <div class="titulo_div">
         <strong>CONTEXTO DE LA PROBLEMÁTICA</strong>
     </div>
@@ -170,7 +170,7 @@
         {!!$contexto!!}
     </div>
 
-    <div class="page-break"></div>
+    {{-- <div class="page-break"></div> --}}
     <div class="titulo_div">
         <strong>INFORMACIÓN REVISADA</strong>
     </div>
@@ -223,7 +223,7 @@
         <tr class="claro">
             <td style="padding: 5px; text-align: center; width: 100%;"><strong>Personero(a) Delegado(a) o Local</strong></td>
             <td style="padding: 5px; text-align: center; width: 20px;"><strong>Sí:</strong></td>
-            <td style="background-color: white; padding: 5px; text-align: center; width: 20px;"><strong></strong></td>
+            <td style="background-color: white; padding: 5px; text-align: center; width: 20px;"><strong>{{($datos->delegado_nombre=='Delegado')?'':'X'}}</strong></td>
             <td style="padding: 5px; text-align: center; width: 20px;"><strong>No:</strong></td>
             <td style="background-color: white; padding: 5px; text-align: center; width: 20px;"></td>
             <td style="padding: 5px; text-align: center; width: 40px;"><strong>Fecha:</strong></td>
@@ -265,7 +265,7 @@
         <tr class="claro">
             <td style="padding: 5px; text-align: center; width: 100%;"><strong>CONCEPTO DE VIABILIDAD</strong></td>
             <td style="padding: 5px; text-align: center; width: 20px;"><strong>Sí:</strong></td>
-            <td style="background-color: white; padding: 5px; text-align: center; width: 20px;"><strong></strong></td>
+            <td style="background-color: white; padding: 5px; text-align: center; width: 20px;"><strong>{{($datos->coordinador_nombre=='Coordinador')?'':'X'}}</strong></td>
             <td style="padding: 5px; text-align: center; width: 20px;"><strong>No:</strong></td>
             <td style="background-color: white; padding: 5px; text-align: center; width: 20px;"></td>
             <td style="padding: 5px; text-align: center; width: 40px;"><strong>Fecha:</strong></td>

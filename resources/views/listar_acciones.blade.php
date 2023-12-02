@@ -102,16 +102,24 @@ Acciones de prevención y control
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="form-group">
                             <label for="titulo">Título <sup style="color: var(--danger)">*</sup></label>
-                            <textarea class="form-control" id="titulo" rows="3" maxlength="2000" onkeyup="FiltrarCaracteres(this.id, 'itemLista');"></textarea>
+                            <textarea class="form-control" id="titulo" rows="3" maxlength="2000" onkeyup="CaracteresRestantes(this.value, 'cont_titulo', 2000);" style="text-transform: uppercase;"></textarea>
+                            <span id="cont_titulo" style="font-size: 11px; padding-top: 2px; position: absolute; right: 15px;">
+                                <i class="fas fa-align-left"></i> 2000
+                            </span>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
                         <div class="form-group">
                             <label for="objetivo_general">Objetivo general <sup style="color: var(--danger)">*</sup></label>
-                            <textarea class="form-control" id="objetivo_general" rows="3" maxlength="2000" onkeyup="FiltrarCaracteres(this.id, 'itemLista');"></textarea>
+                            <textarea class="form-control" id="objetivo_general" rows="3" maxlength="2000" onkeyup="CaracteresRestantes(this.value, 'cont_objetivo_general', 2000);" style="text-transform: uppercase;"></textarea>
+                            <span id="cont_objetivo_general" style="font-size: 11px; padding-top: 2px; position: absolute; right: 15px;">
+                                <i class="fas fa-align-left"></i> 2000
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -156,7 +164,7 @@ Acciones de prevención y control
 <div class="modal fade" id="modalVerRepetirDeclaracion" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="padding: 2px 4px;">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -227,6 +235,7 @@ Acciones de prevención y control
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
     <script src="{{asset('vendor/select2/js/select2.min.js')}}"></script>
+    <script src="{{asset('vendor/select2/js/i18n/es.js')}}"></script>
     <script src="{{asset('vendor/datetimepicker/jquery.datetimepicker.full.min.js')}}"></script>
     <!-- Page level custom scripts -->
     <script src="{{asset('js/listar_acciones.js')}}"></script>

@@ -35,7 +35,7 @@ Planes de gestión
         </div>
     </div>
     <div class="card-body" style="position: relative;">
-        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nuevo plan de gestón" onclick="Nuevo();" style="font-size: 24px; cursor: pointer;"></i>
+        <i id="btnNuevo" class="fas fa-plus-circle" data-toggle="tooltip" data-placement="top" title="Nuevo plan de gestón" onclick="Nuevo(0);" style="font-size: 24px; cursor: pointer;"></i>
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size: 13px;">
             </table>
@@ -58,7 +58,7 @@ Planes de gestión
                 <div class="row">
                     <div class="col-md-9">
                         <label for="accion">Acción <sup style="color: var(--danger)">*</sup></label>
-                        <select id="accion" class="form-control" style="width: 100% !important;">
+                        <select id="accion" class="form-control" style="width: 100% !important;" onchange="DefinirFechaMaxima();">
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -141,7 +141,7 @@ Planes de gestión
 <div class="modal fade" id="modalVerRepetirDeclaracion" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="padding: 2px 4px;">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -185,12 +185,117 @@ Planes de gestión
                             <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="delegadoNo" onclick="AprobarDelegado('No');">No</button>
                         </div>
                     </div>
-                    <div class="row" id="apruebaBotonesFirma" style="margin-top: 32px; display: none;">
+                    <div class="row apruebaBotonesD" style="margin-top: 32px; display: none;">
+                        <div class="col-md-12">
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <form id="formActaD" method="post" enctype="multipart/form-data">
+                                        <input type="file" class="custom-file-input" id="inputActaD" name="inputActaD" aria-describedby="inputGroupActaD" accept=".pdf" onchange="RemoveInvalid(this.id);">
+                                        <label class="custom-file-label" for="inputActaD" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Acta de viabilidad delegado</label>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row apruebaBotonesD" style="margin-top: 15px; display: none;">
                         <div class="col-md-6">
                             <button type="button" class="btn btn-light btn-block" onclick="FirmarDelegado(true);"><i class="fas fa-file-pdf"></i> Vista previa</button>
                         </div>
                         <div class="col-md-6">
                             <button type="button" class="btn btn-primary btn-block" onclick="FirmarDelegado(false);"><i class="fas fa-signature"></i> Firmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mesa de trabajo -->
+<div class="modal fade" id="modalMesaTrabajo" tabindex="-1" role="dialog" aria-labelledby="modalMesaTrabajoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMesaTrabajoLabel">¿Se realizó mesa de trabajo?</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="realizoMTSi" onclick="RealizoMesa('Si');">Si</button>
+                        <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="realizoMTNo" onclick="RealizoMesa('No');">No</button>
+                        <input type="hidden" name="realizo" id="realizo">
+                        <div class="invalid-feedback" id="Mrealizo">Debe seleccionar una opción</div>
+                    </div>
+                </div>
+                <div class="row" style="display: none; padding-top: 40px;" id="rowAprobarMesaT">
+                    <div class="col-md-12">
+                        <label class="requerido minilabel" style="margin-top: -14px;">¿Aprueba plan de gestión?</label>
+                        <br>
+                        <button type="button" class="btn btn-secondary btn-sm" style="width: 110px;" id="aproboMesaSi" onclick="AprobarMesa('Si');">Aprobar</button>
+                        <button type="button" class="btn btn-secondary btn-sm" style="width: 110px;" id="aproboMesaNo" onclick="AprobarMesa('No');">No aprobar</button>
+                        <input type="hidden" name="aproboMesa" id="aproboMesa">
+                        <div class="invalid-feedback" id="MaproboMesa">Debe seleccionar una opción</div>
+                    </div>
+                </div>
+                <div class="row" style="display: none; padding-top: 30px;" id="rowArchivoMesaT">
+                    <div class="col-md-12">
+                        <div class="input-group">
+                            <div class="custom-file">
+                                <form id="formActaE" method="post" enctype="multipart/form-data">
+                                    <input type="file" class="custom-file-input" id="inputActaE" name="inputActaE" aria-describedby="inputGroupActaE" accept=".pdf" onchange="RemoveInvalid(this.id);">
+                                    <label class="custom-file-label" for="inputActaE" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Acta mesa de trabajo con enlace</label>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row top10" style="display: none;" id="rowMotivoMesaT">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="titulo">Motivo / Observaciones <sup style="color: var(--danger)">*</sup></label>
+                            <textarea class="form-control" id="motivo_rechazo_mt" rows="3" maxlength="2000" onkeyup="FiltrarCaracteres(this.id, 'itemLista');"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="GuardarMesaTrabajo();" id="btnGuardar">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalAprobarCoordinador" tabindex="-1" role="dialog" aria-labelledby="modalAprobarCoordinadorLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="padding: 0px 8px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="requerido minilabel" style="margin-top: -14px;">¿Aprueba plan de gestión?</label>
+                            <br>
+                            <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="apruebaPTSi" onclick="AprobarPG('Si');">Si</button>
+                            <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="apruebaPTNo" onclick="AprobarPG('No');">No</button>
+                            <input type="hidden" id="aproboPg">
+                            <div class="invalid-feedback" id="MaproboPg">Debe seleccionar una opción</div>
+                        </div>
+                    </div>
+                    <div class="row" id="apruebaBotonesFirma" style="margin-top: 32px; display: none;">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-light btn-block" onclick="FirmarPlanG(true);"><i class="fas fa-file-pdf"></i> Vista previa</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary btn-block" onclick="FirmarPlanG(false);"><i class="fas fa-signature"></i> Firmar</button>
                         </div>
                     </div>
                 </div>
@@ -207,6 +312,7 @@ Planes de gestión
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
     <script src="{{asset('vendor/select2/js/select2.min.js')}}"></script>
+    <script src="{{asset('vendor/select2/js/i18n/es.js')}}"></script>
     <script src="{{asset('vendor/datetimepicker/jquery.datetimepicker.full.min.js')}}"></script>
     <!-- Include Summernote JS -->
     <script src="{{asset('vendor/summernote/summernote-bs4.js')}}"></script>

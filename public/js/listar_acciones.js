@@ -3,7 +3,7 @@ $(document).ready(function() {
         $('#btnNuevo').remove();
     }
     let hoy = new Date();
-    SetCampoFecha('fechaPG', hoy.toISOString().split('T')[0]);
+    SetCampoFecha('fechaPG', _HOY);
     ConsultarAcciones();
     _RQ('GET','/back/entidades_por_delegada', null, function(result) {
         $('#entidades').html(plantillaHTML.options(result));
@@ -106,6 +106,7 @@ $('#dataTable').on('draw.dt', function () {
     }
     $('#loading').hide();
     $('#entidades').select2({
+        language: "es",
         dropdownParent: $('#modalNuevaAccion')
     });
 } );

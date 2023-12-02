@@ -26,11 +26,14 @@ class PermisosSeed extends Seeder
             array('url' => 'accionespyc/listar', 'accion' => 'conflicto', 'id_rol' => 3),
             array('url' => 'planest/listar', 'accion' => 'nuevo', 'id_rol' => 3),
             array('url' => 'planest/listar', 'accion' => 'editar', 'id_rol' => 3, 'estados' => '[1,2,3]'),
+            array('url' => 'planest/listar', 'accion' => 'respuesta', 'id_rol' => 3, 'estados' => '[2]'),
             array('url' => 'planest/listar', 'accion' => 'aprobar', 'id_rol' => 2, 'estados' => '[2,4]'),
             array('url' => 'plagesg/listar', 'accion' => 'nuevo', 'id_rol' => 3),
             array('url' => 'plagesg/listar', 'accion' => 'editar', 'id_rol' => 5, 'estados' => '[1,2,3,6]'),
             array('url' => 'plagesg/listar', 'accion' => 'conflicto', 'id_rol' => 5),
-            array('url' => 'plagesg/listar', 'accion' => 'aprobar', 'id_rol' => 5, 'estados' => '[3]'),
+            array('url' => 'plagesg/listar', 'accion' => 'aprobar', 'id_rol' => 3, 'estados' => '[3]'),
+            array('url' => 'plagesg/listar', 'accion' => 'aprobar', 'id_rol' => 4, 'estados' => '[4]'),
+            array('url' => 'plagesg/listar', 'accion' => 'aprobar', 'id_rol' => 2, 'estados' => '[5]'),
         ];
         for ($i=0; $i < count($datos); $i++) {
             PermisosModel::create($datos[$i]);

@@ -33,7 +33,7 @@ class PlantillaHTML{
             html += `<i class="fas fa-stamp" data-toggle="tooltip" data-placement="top" title="Documentos" onclick="DocumentosAccion(${data.id_accion});"></i>`;
         }
         if (data.detalle) {
-            html += `<i class="fas fa-file-invoice" data-toggle="tooltip" data-placement="top" title="Ver detalle" onclick="VerDetalle(${data.id});"></i>`;
+            html += `<i class="fas fa-file-invoice" data-toggle="tooltip" data-placement="top" title="Detalle de la acción" onclick="VerDetalle(${data.id});"></i>`;
         }
         if (data.editar && permisos.editar) {
             html += `<i class="fas fa-edit" data-toggle="tooltip" data-placement="top" title="Editar" onclick="Editar(${data.id});"></i>`;
@@ -68,16 +68,42 @@ class PlantillaHTML{
                 html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Ver firmado" onclick="VerFirmado('${data.archivo}');"></i>`;
             }
         }
-        if (data.generar_pg && data.estado > 1) {
-            html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Vista previa plan de gestión" onclick="VistaPrevia(${data.id}, ${data.estado});"></i>`;
+        if (data.generar_pg) {
+            if(data.estado > 1 && data.estado < 8){
+                html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Vista previa plan de gestión" onclick="VistaPrevia(${data.id}, ${data.estado});"></i>`;
+            }
+            if (data.estado == 8) {
+                html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Ver firmado" onclick="VerFirmado('${data.archivo}');"></i>`;
+            }
         }
         if (data.next) {
             html += `<i class="fas fa-forward" data-toggle="tooltip" data-placement="top" title="Siguiente" onclick="Siguiente(${data.id});"></i>`;
         }
         if (data.aprobar) {
-            if (permisos.aprobar && permisos.aprobar.includes(parseInt(data.estado))) {
-                html += `<i class="fas fa-tasks" data-toggle="tooltip" data-placement="top" title="${(data.aprobar_txt)?data.aprobar_txt:'Aprobar/Rechazar'}" onclick="ConfirmarAprobar(${data.id}, ${data.estado});"></i>`;
+            let title = 'Aprobar/Rechazar';
+            if (data.pg && data.estado == 3) {
+                title = 'Viabilidad delegado';
             }
+            if (data.pg && data.estado == 4) {
+                title = 'Mesa trabajo delegado';
+            }
+            if (permisos.aprobar && permisos.aprobar.includes(parseInt(data.estado))) {
+                html += `<i class="fas fa-tasks" data-toggle="tooltip" data-placement="top" title="${title}" onclick="ConfirmarAprobar(${data.id}, ${data.estado});"></i>`;
+            }
+        }
+        if (data.rechazos) {
+            let respuesta = false;
+            if (permisos.respuesta && permisos.respuesta.includes(parseInt(data.estado))) {
+                respuesta = true;
+            }
+            if (data.r_activo) {
+                html += `<i class="fas fa-bell" data-toggle="tooltip" data-placement="top" title="Solicitudes de modificación" onclick="Rechazos(${data.id}, ${respuesta});" style="color: var(--orange);"></i>`;
+            } else {
+                html += `<i class="fas fa-bell-slash" data-toggle="tooltip" data-placement="top" title="Solicitudes de modificación" onclick="Rechazos(${data.id}, 'sin_nota');"></i>`;
+            }
+        }
+        if (data.equipo) {
+            html += `<i class="fas fa-users-cog" data-toggle="tooltip" data-placement="top" title="Cambiar equipo" onclick="CambiarEquipo(${data.id});"></i>`;
         }
         return html;
     }
@@ -184,6 +210,49 @@ class PlantillaHTML{
         <tr><td>Fecha inicio acción</td><td>${data.fecha_inicio.substring(0, 10).split('-').reverse().join('/')}</td></tr>
         <tr><td>Fecha fin acción</td><td>${data.fecha_final.substring(0, 10).split('-').reverse().join('/')}</td></tr>
         `;
+    }
+
+    itemVigente(data){
+        let html = `<button type="button" class="btn btn-outline-light btn-lg" style="padding: 14px 34px;" onclick="Vigente(${data.id});"></button>`;
+        if (data.vigente == '1') {
+            html = '<i class="fas fa-check"></i>';
+        }
+        return html;
+    }
+
+    lineaTiempoRechazos(data){
+        let html = '';
+        data.forEach(element => {
+            let rechazo = `
+            <div class="row"><div class="col-md-10">
+                <div class="alert alert-secondary" role="alert" style="float: left;">
+                    <p style="font-size: 13px;">${element.texto_rechazo}</p>
+                    <p class="crea_chat">
+                        <span style="font-size: 10px;">${element.nombre_rechazo}</span>
+                        <br>
+                        <span style="font-size: 10px;">${element.fecha_rechazo}</span>
+                    </p>
+                </div>
+            </div><div class="col-md-2"></div></div>
+            `;
+            let respuesta = '';
+            if (element.nombre_respuesta != null) {
+                respuesta = `
+                <div class="row"><div class="col-md-2"></div><div class="col-md-10">
+                    <div class="alert alert-success" role="alert" style="float: right;">
+                        <p style="font-size: 13px;">${element.texto_respuesta}</p>
+                        <p class="crea_chat">
+                            <span style="font-size: 10px;">${element.nombre_respuesta}</span>
+                            <br>
+                            <span style="font-size: 10px;">${element.fecha_respuesta}</span>
+                        </p>
+                    </div>
+                </div></div>
+                `;
+            }
+            html += rechazo+respuesta;
+        });
+        return html;
     }
 
 }

@@ -2,6 +2,7 @@ var jsonUsuariosSP = [];
 $(document).ready(function() {
     ConsultarUsuarios();
     $('.select2').select2({
+        language: "es",
         theme: 'bootstrap4',
         dropdownParent: $('#addPerfilModal')
     });

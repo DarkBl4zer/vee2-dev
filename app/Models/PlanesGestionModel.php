@@ -23,9 +23,10 @@ class PlanesGestionModel extends Model
         'estado',
         'activo',
         'archivo_firmado',
-        'archivo_cronograma',
-        'archivo_acta',
-        'original_acta',
+        'archivo_acta_d',
+        'original_acta_d',
+        'archivo_acta_e',
+        'original_acta_e',
         'fecha_informe',
         'id_delegado',
         'fecha_delegado',
@@ -34,7 +35,7 @@ class PlanesGestionModel extends Model
     ];
 
     protected $guarded = ['id'];
-    protected $appends = ['accion', 'declaraciones', 'delegada', 'fechas', 'nombreestado', 'finforme'];
+    protected $appends = ['accion', 'declaraciones', 'delegada', 'fechas', 'nombreestado', 'finforme', 'idsUsuariosDecla'];
 
     public function cronograma() : HasMany {
         return $this->hasMany(CronogramaModel::class, 'id_accion', 'id_accion')->orderBy('vee2_cronogramas.id_etapa', 'asc');
@@ -96,6 +97,15 @@ class PlanesGestionModel extends Model
 
     public function coordinador() : HasOne {
         return $this->hasOne(UsuariosModel::class, 'id', 'id_coordinador');
+    }
+
+    public function getIdsUsuariosDeclaAttribute(): Array{
+        $declaraciones = DeclaracionesModel::where('id_accion', $this->id_accion)->where('tipo_usuario', 'FUNCIONARIO')->get();
+        $funcionarios = [];
+        foreach ($declaraciones as $item) {
+            array_push($funcionarios, intval($item->id_usuario));
+        }
+        return $funcionarios;
     }
 
 }

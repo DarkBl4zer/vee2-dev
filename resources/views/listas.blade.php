@@ -55,6 +55,7 @@ Configurar Listas
     <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
     <script src="{{asset('vendor/select2/js/select2.min.js')}}"></script>
+    <script src="{{asset('vendor/select2/js/i18n/es.js')}}"></script>
     <!-- Page level custom scripts -->
     <script src="{{asset('js/listas.js')}}"></script>
 @endsection
