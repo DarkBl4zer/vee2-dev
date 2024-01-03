@@ -13,7 +13,7 @@
                 <div class="row" id="alertNoFirma0" style="display: none;">
                     <div class="col-md-12">
                         <div class="alert alert-danger" role="alert">
-                            Por favor configure primero la firma <a href="/config/firma">aquí</a>
+                            Por favor configure primero la firma <a id="hrefFirma0" href="/config/firma">aquí</a>
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                                 <option value="{{$profesion->valor_numero}}">{{$profesion->nombre}}</option>
                             @endforeach
                         </select>
-                        <span style="font-size: 11px; color: var(--info); position: absolute;">* Si no encuentra su profesion en la lista comunicarce con el administrador.</span>
+                        <span style="font-size: 11px; color: var(--info); position: absolute;">* Si no encuentra su profesión en la lista comunicarse con el administrador.</span>
                     </div>
                     <div class="col-sm-6" id="dSCargo" style="display: none;">
                         <label for="scargo">Cargo <sup style="color: var(--danger)">*</sup></label>
@@ -141,11 +141,11 @@
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    <div style="display: none; margin-bottom: 25px; color: var(--danger); font-size: 12px;" id="errTablas">Se debe agregar información en por lo menos una de las tablas.</div>
                                 </li>
-                                <div style="display: none; margin-top: 25px; margin-bottom: 25px; color: var(--danger);" id="errTablas">Se debe agregar información en por lo menos una de las tablas.</div>
                                 <li style="margin-top: 15px;">
                                     Explique brevemente la motivación del impedimento o del conflicto de interés (artículo 12 de la Ley 1437 de 2011):
-                                    <textarea class="form-control" id="motivo" rows="3" style="margin-top: 5px;" onkeyup="this.value = FiltrarCaracteresOLD(this.id, 'listas');"></textarea>
+                                    <textarea class="form-control" id="motivo" rows="3" style="margin-top: 5px;" maxlength="2000" onkeyup="this.value = FiltrarCaracteresOLD(this.id, 'textos');"></textarea>
                                     <div class="invalid-feedback">Este campo es requerido</div>
                                 </li>
                             </ol>
@@ -167,7 +167,8 @@
 <div class="modal fade" id="modalFirmar" tabindex="-1" role="dialog" aria-labelledby="modalFirmarLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header" style="padding: 0px 8px;">
+            <div class="modal-header">
+                <h6 class="modal-title" id="modalImparcialidadLabel">Revisar documento</h6>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -177,7 +178,7 @@
                     <div class="row" id="alertNoFirma" style="display: none;">
                         <div class="col-md-12">
                             <div class="alert alert-danger" role="alert">
-                                Por favor configure primero la firma <a href="/config/firma">aquí</a>
+                                Por favor configure primero la firma <a id="hrefFirma" href="/config/firma">aquí</a>
                             </div>
                         </div>
                     </div>

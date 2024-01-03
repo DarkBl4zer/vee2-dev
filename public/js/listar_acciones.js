@@ -3,7 +3,7 @@ $(document).ready(function() {
         $('#btnNuevo').remove();
     }
     let hoy = new Date();
-    SetCampoFecha('fechaPG', _HOY);
+    SetCampoFecha('fechaIni', _HOY);
     ConsultarAcciones();
     _RQ('GET','/back/entidades_por_delegada', null, function(result) {
         $('#entidades').html(plantillaHTML.options(result));
@@ -39,7 +39,7 @@ function LlenaTabla(datos) {
     ];
     let targets = [4];
     let targets2 = [3];
-    if(!permisos.nuevo){
+    if(!permisos.nuevo || datos.asignado){
         columns = [
             {title: "#"},
             {title: "Título"},
@@ -51,12 +51,12 @@ function LlenaTabla(datos) {
         targets = [5];
         targets2 = [4];
     }
-    datos.forEach(element => {
+    datos.datos.forEach(element => {
         let columna = [];
         columna.push(element.numero+'<br>'+element.nombreestado);
         columna.push(element.titulo);
         columna.push(element.entidades.string);
-        if (!permisos.nuevo) {
+        if (!permisos.nuevo || datos.asignado) {
             columna.push(element.delegada);
         }
         columna.push(element.fechas);
@@ -69,6 +69,7 @@ function LlenaTabla(datos) {
             id_accion: element.id,
             estado: element.estado,
             dec_firmada: element.dec_firmada,
+            dec_conflicto: element.conflicto,
             editar: editar,
             conflicto: true,
             documentos: true,
@@ -82,7 +83,8 @@ function LlenaTabla(datos) {
         columns: columns,
         data: filas,
         columnDefs: [
-            {targets: targets, className: "align-middle text-center", width: "70px"},
+            {targets: [1], className: "mayus"},
+            {targets: targets, className: "align-middle text-center", width: "150px"},
             {targets: targets2, width: "250px"},
             {targets: '_all', className: "align-middle"}
         ],
@@ -100,7 +102,8 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    //$('td > i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    $('td > i').tooltip()
     if (ppEditar) {
         $('#btnNuevo').show();
     }
@@ -167,12 +170,12 @@ function CheckEntidad(esto){
 function CambioFecha(idx){
     $('#'+idx).removeClass('is-invalid');
     let valor = $('#'+idx).val();
-    let fechaSel = valor.split('/').join('/');
+    let fechaSel = valor.split('/').reverse().join('-');
     if (fechaSel != '') {
-        if (idx == "fechaPG") {
-            SetCampoFecha('fechaIni', fechaSel);
-        }
         if (idx == "fechaIni") {
+            SetCampoFecha('fechaPG', fechaSel);
+        }
+        if (idx == "fechaPG") {
             SetCampoFecha('fechaFin', fechaSel);
         }
     }
@@ -256,8 +259,8 @@ function Editar(id) {
         $('#objetivo_general').val(result.objetivo_general);
         $('#entidades').select2().val(result.entidades.arr).trigger("change");
         $('#numero_profesionales').val(result.numero_profesionales);
-        $('#fechaPG').val(result.fecha_plangestion.substring(0, 10).split('-').reverse().join('/'));
         $('#fechaIni').val(result.fecha_inicio.substring(0, 10).split('-').reverse().join('/'));
+        $('#fechaPG').val(result.fecha_plangestion.substring(0, 10).split('-').reverse().join('/'));
         $('#fechaFin').val(result.fecha_final.substring(0, 10).split('-').reverse().join('/'));
         setTimeout(() => {
             if (result.id_temas != null) {
@@ -291,6 +294,7 @@ function LimpiarFormulario(){
 function CrearDeclaracion(id) {
     if (!baseTrabajo.firma) {
         $('#alertNoFirma0').show();
+        $('#hrefFirma0').prop('href', '/config/firma?retorno='+window.location.pathname);
     }
     $('#idCreaEdita').val(id);
     Mostrar('modalImparcialidad');
@@ -312,5 +316,29 @@ function VerDetalle(id) {
         $('#loading').hide();
         $('#bodyTablaDetalle').html(plantillaHTML.itemsTablaDetalleAccion(result));
         Mostrar('modalDetalle');
+    });
+}
+
+function CambiarDelegado(id) {
+    $('#idCreaEdita').val(id);
+    let datos = {id};
+    _RQ('GET','/back/delegados_para_cambio', datos, function(result) {
+        $('#loading').hide();
+        $('#bodyTablaDelegados').html(plantillaHTML.itemsTablaDelegados(result));
+        Mostrar('modalCambioDelegado');
+    });
+}
+
+function SeleccionarDelegado(id, delegada) {
+    let datos = {
+        id_accion: $('#idCreaEdita').val(),
+        id_usuario: id,
+        id_delegada: delegada
+    };
+    _RQ('POST','/back/cambiar_delegado', datos, function(result) {
+        _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
+            $('#loading').hide();
+            Ocultar('modalCambioDelegado');
+        });
     });
 }

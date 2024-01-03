@@ -121,7 +121,10 @@
                                         <div class="col-md-12">
                                             <div class="form-group">
                                                 <label for="cron_actividad">Actividad <sup style="color: var(--danger)">*</sup></label>
-                                                <textarea class="form-control" id="cron_actividad" rows="3" maxlength="2000" onkeyup="FiltrarCaracteres(this.id, 'itemLista');" style="font-size: 13px"></textarea>
+                                                <textarea class="form-control" id="cron_actividad" rows="3" maxlength="2000" onkeyup="CaracteresRestantes(this.value, 'cont_cron_actividad', 2000);" style="text-transform: uppercase;"></textarea>
+                                                <span id="cont_cron_actividad" style="font-size: 11px; padding-top: 2px; position: absolute; right: 15px;">
+                                                    <i class="fas fa-align-left"></i> 2000
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

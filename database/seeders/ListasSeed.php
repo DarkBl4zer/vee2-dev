@@ -19,10 +19,10 @@ class ListasSeed extends Seeder
             array('tipo' => 'tipo_valor_listas', 'nombre' => 'VALOR TEXTO'),
 
             /* Tipos de listas desplegables*/
-            array('tipo' => 'tipo_listas', 'nombre' => 'ACTUACIONES (ACCIONES DE PREVENCIÓN Y CONTROL)', 'tipo_valor' => 3, 'valor_texto' => 'actuacion_vee'),
+            array('tipo' => 'tipo_listas', 'nombre' => 'ACCIONES DE PREVENCIÓN Y CONTROL', 'tipo_valor' => 3, 'valor_texto' => 'actuacion_vee'),
             array('tipo' => 'tipo_listas', 'nombre' => 'PROFESIONES (IMPARCIALIDAD Y CONFLICTO)', 'tipo_valor' => 3, 'valor_texto' => 'profesiones'),
-            array('tipo' => 'tipo_listas', 'nombre' => 'ETAPA (CRONOGRAMA PLAN DE GESTIÓN)', 'tipo_valor' => 3, 'valor_texto' => 'etapas_crono'),
-            array('tipo' => 'tipo_listas', 'nombre' => 'ACTUACIONES (ACTUACIONES POSTERIORES)', 'tipo_valor' => 3, 'valor_texto' => 'actuaciones_posteriores'),
+            array('tipo' => 'tipo_listas', 'nombre' => 'PLAN DE GESTIÓN - CRONOGRAMA', 'tipo_valor' => 3, 'valor_texto' => 'etapas_crono'),
+            array('tipo' => 'tipo_listas', 'nombre' => 'ACTUACIONES POSTERIORES', 'tipo_valor' => 3, 'valor_texto' => 'actuaciones_posteriores'),
             //array('tipo' => 'tipo_listas', 'nombre' => 'ACCIONES INTERNAS (ACTUACIONES POSTERIORES)', 'tipo_valor' => 3, 'valor_texto' => 'acciones_internas'),
 
             /* Actuaciones para crear veedurias*/
@@ -125,7 +125,7 @@ class ListasSeed extends Seeder
 
             /* Estados */
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 1, 'valor_texto' => 'info', 'nombre' => 'CREADA'),
-            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 2, 'valor_texto' => 'info', 'nombre' => 'DECLARACION DELEGADO(A)'),
+            array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 2, 'valor_texto' => 'info', 'nombre' => 'DECLARACIÓN DELEGADO(A)'),
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 3, 'valor_texto' => 'info', 'nombre' => 'EN PLAN DE TRABAJO'),
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 4, 'valor_texto' => 'danger', 'nombre' => 'RECHAZO PLAN DE TRABAJO'),
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 5, 'valor_texto' => 'success', 'nombre' => 'APROBADO PLAN DE TRABAJO'),
@@ -139,11 +139,12 @@ class ListasSeed extends Seeder
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 13, 'valor_texto' => 'success', 'nombre' => 'ACCION CERRADA'),
             array('tipo' => 'estados_acciones', 'tipo_valor' => 2, 'valor_numero' => 14, 'valor_texto' => 'info', 'nombre' => 'ESPERANDO APROBACIÓN'),
 
-            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 1, 'valor_texto' => 'info', 'nombre' => 'CREADO'),
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 1, 'valor_texto' => 'info', 'nombre' => 'VIGENTE'),
             array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 2, 'valor_texto' => 'info', 'nombre' => 'FIRMADO DELEGADO(A)'),
             array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 3, 'valor_texto' => 'danger', 'nombre' => 'RECHAZADO'),
             array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 4, 'valor_texto' => 'info', 'nombre' => 'ACTUALIZADO'),
             array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 5, 'valor_texto' => 'success', 'nombre' => 'APROBADO'),
+            array('tipo' => 'estados_plant', 'tipo_valor' => 2, 'valor_numero' => 6, 'valor_texto' => 'secondary', 'nombre' => 'DESACTUALIZADO'),
 
             array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 1, 'valor_texto' => 'info', 'nombre' => 'EQUIPO SELECCIONADO'),
             array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 2, 'valor_texto' => 'info', 'nombre' => 'CREADO'),
@@ -153,6 +154,8 @@ class ListasSeed extends Seeder
             array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 6, 'valor_texto' => 'danger', 'nombre' => 'RECHAZADO'),
             array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 7, 'valor_texto' => 'info', 'nombre' => 'ACTUALIZADO'),
             array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 8, 'valor_texto' => 'success', 'nombre' => 'APROBADO'),
+            array('tipo' => 'estados_plang', 'tipo_valor' => 2, 'valor_numero' => 9, 'valor_texto' => 'secondary', 'nombre' => 'DESACTUALIZADO'),
+
         ];
         for ($i=0; $i < count($datos); $i++) {
             ListasModel::create($datos[$i]);

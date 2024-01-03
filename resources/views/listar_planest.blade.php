@@ -90,21 +90,8 @@ Planes de trabajo
                     <div class="row" id="alertNoFirma" style="display: none;">
                         <div class="col-md-12">
                             <div class="alert alert-danger" role="alert">
-                                Por favor configure primero la firma <a href="/config/firma">aquí</a>
+                                Por favor configure primero la firma <a id="hrefFirma" href="/config/firma">aquí</a>
                             </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="input-group">
-                                <div class="custom-file">
-                                    <form id="formActa" method="post" enctype="multipart/form-data">
-                                        <input type="file" class="custom-file-input" id="inputActa" name="inputActa" aria-describedby="inputGroupActa" accept=".pdf" onchange="RemoveInvalid(this.id);">
-                                        <label class="custom-file-label" for="inputActa" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Acta aprobación plan de trabajo</label>
-                                    </form>
-                                </div>
-                            </div>
-                            <div class="invalid-feedback" id="MinputActa" style="font-size: 11px;"></div>
                         </div>
                     </div>
                     <div class="row" id="botonesFirma" style="margin-top: 32px;">
@@ -132,12 +119,32 @@ Planes de trabajo
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
-                    <div class="row">
+                    <div class="row" id="alertNoFirma2" style="display: none;">
+                        <div class="col-md-12">
+                            <div class="alert alert-danger" role="alert">
+                                Por favor configure primero la firma <a id="hrefFirma2" href="/config/firma">aquí</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="rowAprueba">
                         <div class="col-md-12">
                             <label class="requerido minilabel" style="margin-top: -14px;">¿Aprueba plan de trabajo?</label>
                             <br>
                             <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="apruebaPTSi" onclick="AprobarPT('Si');">Si</button>
                             <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="apruebaPTNo" onclick="AprobarPT('No');">No</button>
+                        </div>
+                    </div>
+                    <div class="row" id="rowActa" style="margin-top: 32px; display: none;">
+                        <div class="col-md-12">
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <form id="formActa" method="post" enctype="multipart/form-data">
+                                        <input type="file" class="custom-file-input" id="inputActa" name="inputActa" aria-describedby="inputGroupActa" accept=".pdf" onchange="RemoveInvalid(this.id);">
+                                        <label class="custom-file-label" for="inputActa" style="border-radius: 5px; font-size: 14px;" data-browse="Elegir">Acta aprobación plan de trabajo</label>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback" id="MinputActa" style="font-size: 11px;"></div>
                         </div>
                     </div>
                     <div class="row" id="apruebaBotonesFirma" style="margin-top: 32px; display: none;">
@@ -149,10 +156,13 @@ Planes de trabajo
                         </div>
                     </div>
                     <div class="row" id="rowMotivo" style="margin-top: 32px; display: none;">
-                        <div class="col-md-12">
+                        <div class="col-md-12" style="margin-bottom: 20px;">
                             <div class="form-group">
                                 <label for="titulo">Motivo / Observaciones <sup style="color: var(--danger)">*</sup></label>
-                                <textarea class="form-control" id="motivo_rechazo" rows="3" maxlength="2000"></textarea>
+                                <textarea class="form-control" id="motivo_rechazo" rows="3" maxlength="2000" onkeyup="CaracteresRestantes(this.value, 'cont_motivo_rechazo', 2000);"></textarea>
+                                <span id="cont_motivo_rechazo" style="font-size: 11px; padding-top: 2px; position: absolute; right: 15px;">
+                                    <i class="fas fa-align-left"></i> 2000
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-8"></div>
@@ -217,7 +227,10 @@ Planes de trabajo
             <div class="container-fluid send_chat" id="chatRespuesta" style="display: none;">
                 <div class="row">
                     <div class="col-md-11">
-                        <textarea class="form-control" id="respuesta" rows="2" maxlength="2000" style="font-size: 13px;"></textarea>
+                        <textarea class="form-control" id="respuesta" rows="2" maxlength="2000" style="font-size: 13px;" onkeyup="CaracteresRestantes(this.value, 'cont_respuesta', 2000);"></textarea>
+                        <span id="cont_respuesta" style="font-size: 11px; padding-top: 2px; position: absolute; right: 15px;">
+                            <i class="fas fa-align-left"></i> 2000
+                        </span>
                     </div>
                     <div class="col-md-1 vertical_col">
                         <i class="fab fa-telegram-plane" onclick="EnviarMensaje(false);" style="font-size: 24px; cursor: pointer;"></i>

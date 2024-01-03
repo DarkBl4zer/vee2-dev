@@ -26,23 +26,23 @@ class PlanGestionController extends Controller
     public function Planesgestion(Request $request){
         try {
             $sesion = (object)$request->sesion;
-            $diaUno = Carbon::createFromFormat('Y-m-d H:i:s', date("Y").'-01-01 00:00:00', 'America/Bogota');
+            $diaUno = Carbon::createFromFormat('Y-m-d H:i:s', (intval(date("Y"))-1).'-01-01 00:00:00', 'America/Bogota');
             if($sesion->trabajo->id_rol == 1){
-                $datos = PlanesGestionModel::where('created_at', '>', $diaUno)->orderBy('id', 'asc')->get();
+                $datos = PlanesGestionModel::where('created_at', '>', $diaUno)->where('activo', true)->orderBy('id', 'asc')->get();
             }
             if($sesion->trabajo->id_rol == 2){
                 $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
                 $datos = PlanesGestionModel::select('vee2_planes_gestion.*')->join('view_vee_delegadas', 'vee2_planes_gestion.id_delegada', 'view_vee_delegadas.id')
-                ->where('vee2_planes_gestion.created_at', '>', $diaUno)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                ->where('vee2_planes_gestion.created_at', '>', $diaUno)->where('vee2_planes_gestion.activo', true)->where('view_vee_delegadas.tipo', $tipoDelegada)
                 ->orderBy('vee2_planes_gestion.id', 'asc')->get();
             }
             if($sesion->trabajo->id_rol == 3 || $sesion->trabajo->id_rol == 4){
-                $datos = PlanesGestionModel::where('created_at', '>', $diaUno)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+                $datos = PlanesGestionModel::where('created_at', '>', $diaUno)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
             }
             if($sesion->trabajo->id_rol == 5){
                 $datos = PlanesGestionModel::select('vee2_planes_gestion.*', 'vee2_declaraciones.archivo_firmado as dec_firmada')->join('vee2_declaraciones', 'vee2_planes_gestion.id_accion', 'vee2_declaraciones.id_accion')
-                            ->where('vee2_planes_gestion.created_at', '>', $diaUno)->where('vee2_declaraciones.tipo_usuario', 'FUNCIONARIO')
-                            ->where('vee2_declaraciones.id_usuario', $sesion->id)->orderBy('vee2_planes_gestion.id', 'asc')->get();
+                            ->where('vee2_planes_gestion.created_at', '>', $diaUno)->where('vee2_planes_gestion.activo', true)->where('vee2_declaraciones.tipo_usuario', 'FUNCIONARIO')
+                            ->where('vee2_declaraciones.id_usuario', $sesion->id)->where('vee2_declaraciones.activo', true)->orderBy('vee2_planes_gestion.id', 'asc')->get();
             }
             return response()->json($datos);
         } catch (Exception $ex) {
@@ -59,7 +59,7 @@ class PlanGestionController extends Controller
                                     ->where('id_usuario', '!=', $sesion->id)->get();
             $equipo = [];
             if ($request->id != 0) {
-                $equipo = DeclaracionesModel::where('id_accion', $request->id)->get();
+                $equipo = DeclaracionesModel::where('id_accion', $request->id)->where('activo', true)->get();
             }
             $arrUsuarios = [];
             $arrNombres = [];
@@ -85,7 +85,7 @@ class PlanGestionController extends Controller
                     //array_push($usuariosOut, $usuario);
                 }
             }
-            $Tacciones = AccionesModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', '!=', 1)->get();
+            $Tacciones = AccionesModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', 5)->where('activo', true)->get();
             $acciones = [];
             foreach ($Tacciones as $item) {
                 array_push($acciones, array(
@@ -94,12 +94,18 @@ class PlanGestionController extends Controller
                     'nombre' => '['.$item->numero.'] '. Str::limit($item->titulo, 70, '...')
                 ));
             }
+            $titulo = "";
+            if($request->id != 0){
+                $accion = AccionesModel::where('id', $request->id)->first();
+                $titulo = '['.$accion->numero.'] '. Str::limit($accion->titulo, 70, '...');
+            }
             return response()->json(array(
                 'usuariosIn' => $usuariosIn,
                 'usuariosOut' => $usuariosOut,
                 'acciones' => $acciones,
                 'arrUsuarios' => $arrUsuarios,
-                'arrNombres' => $arrNombres
+                'arrNombres' => $arrNombres,
+                'titulo' => $titulo
             ));
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getTrace());
@@ -111,7 +117,50 @@ class PlanGestionController extends Controller
         try {
             $sesion = (object)$request->sesion;
             if ($request->id != 0) {
-                //TODO actualizar equipo
+                $declaraciones = DeclaracionesModel::where('id_accion', $request->id)->where('activo', true)->get();
+                $olds = array();
+                foreach ($declaraciones as $item) {
+                    array_push($olds, $item->id_usuario);
+                    if(!in_array($item->id_usuario, $request->arrUsuarios)){
+                        DeclaracionesModel::where('id_accion', $request->id)->where('id_usuario', $item->id_usuario)->update(array('activo' => false));
+                    }
+                }
+                foreach ($request->arrUsuarios as $item) {
+                    if(!in_array($item, $olds)){
+                        DeclaracionesModel::create([
+                            'id_accion' => $request->id,
+                            'id_usuario' => $item,
+                            'tipo_usuario' => 'FUNCIONARIO'
+                        ]);
+                        $noti = (object)array(
+                            'para' => 'Funcionarios',
+                            'funcionarios' => [$item],
+                            'id_delegada' => $sesion->trabajo->id_delegada,
+                            'tipo' => 'primary',
+                            'texto' => 'Asignado(a) a equipo de trabajo',
+                            'url' => '/plagesg/listar'
+                        );
+                        $this->Notificar($noti);
+                    }
+                }
+                if ($this->TodasFirmadas($request->id)) {
+                    $plang = PlanesGestionModel::where('id_accion', $request->id)->first();
+                    if($plang->estado < 3){
+                        $plang->update(array('estado' => 3));
+                    }
+                    $noti = (object)array(
+                        'para' => 'Delegado',
+                        'tipo' => 'primary',
+                        'texto' => 'Declaraciones del equipo firmadas',
+                        'url' => '/plagesg/listar'
+                    );
+                    $this->Notificar($noti);
+                } else{
+                    $plang = PlanesGestionModel::where('id_accion', $request->id)->first();
+                    if($plang->estado > 1){
+                        $plang->update(array('estado' => 1));
+                    }
+                }
             } else{
                 AccionesModel::where('id', $request->accion)->update(array('estado' => 6));
                 PlanesGestionModel::create([

@@ -55,7 +55,7 @@ Planes de gestión
         </div>
         <div class="modal-body">
             <div class="container-fluid">
-                <div class="row">
+                <div class="row" id="rowDatoAccion">
                     <div class="col-md-9">
                         <label for="accion">Acción <sup style="color: var(--danger)">*</sup></label>
                         <select id="accion" class="form-control" style="width: 100% !important;" onchange="DefinirFechaMaxima();">
@@ -223,6 +223,11 @@ Planes de gestión
             </div>
             <div class="modal-body">
                 <div class="row">
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-light btn-block" onclick="VistaPrevia($('#idCreaEdita').val(), false);"><i class="fas fa-file-pdf"></i> Vista previa</button>
+                    </div>
+                </div>
+                <div class="row" style="padding-top: 40px;">
                     <div class="col-md-12">
                         <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="realizoMTSi" onclick="RealizoMesa('Si');">Si</button>
                         <button type="button" class="btn btn-secondary btn-sm" style="width: 50px;" id="realizoMTNo" onclick="RealizoMesa('No');">No</button>

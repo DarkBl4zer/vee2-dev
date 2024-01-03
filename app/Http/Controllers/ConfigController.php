@@ -9,12 +9,12 @@ use Illuminate\Http\Request;
 class ConfigController extends Controller
 {
     public function Usuarios(Request $request){
-        try {
+        //try {
             $sesion = (object)$request->sesion;
             $datos = UsuariosModel::get();
             return response()->json($datos);
-        } catch (Exception $ex) {
+        /*} catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getTrace());
-        }
+        }*/
     }
 }

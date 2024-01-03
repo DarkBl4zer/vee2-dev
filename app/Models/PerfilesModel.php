@@ -37,7 +37,12 @@ class PerfilesModel extends Model
 
     public function getApdelegadaAttribute(): String{
         if (!is_null($this->id_delegada)) {
-            return DelegadasModel::where('id', $this->id_delegada)->first()->nombre;
+            $delegada = DelegadasModel::where('id', $this->id_delegada)->first();
+            if (!is_null($delegada)) {
+                return DelegadasModel::where('id', $this->id_delegada)->first()->nombre;
+            }else{
+                return "";
+            }
         } else{
             return '';
         }

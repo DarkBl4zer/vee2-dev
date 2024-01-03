@@ -11,7 +11,7 @@ function _HOY() {
 }
 
 function ConsultarNotificaciones() {
-    let datos = {todo:false};
+    let datos = {todo:"0"};
     _RQ('GET','/back/notificaciones', datos, function(result) {
         let html = "";
         if (result.activas > 0 && result.activas < 10) {
@@ -250,16 +250,18 @@ function IrA(modal, id) {
 
 
 function ArchivoValido(id, tipos, peso){
+    RemoveInvalid(id);
     var valida = true;
     var fileInput = $('#' + id);
-    var maxSize = peso * 1000000;
+    var maxSize = peso * (1024*1024);
     if(fileInput.get(0).files.length){
         var extArchivo = fileInput.get(0).files[0].name.split('.').pop().toLowerCase();
         var fileSize = fileInput.get(0).files[0].size;
         if(fileSize > maxSize){
-            $("#M" + id).html('El tamaño del archivo debe ser máximo ' + peso + 'mb.');
+            $("#M" + id).html('El tamaño del archivo debe ser máximo ' + peso + 'MB.');
             $("#M" + id).show();
             valida = false;
+            SetInvalid(id);
         }
 
         var noEncontrado = true;
@@ -272,9 +274,12 @@ function ArchivoValido(id, tipos, peso){
             $("#M" + id).html('El tipo de archivo seleccionado no es correcto, por favor seleccione un archivo ' + tipos.join(' o ') + '.');
             $("#M" + id).show();
             valida = false;
+            SetInvalid(id);
         }
     } else{
+        SetInvalid(id);
         valida = false;
     }
     return valida;
 }
+

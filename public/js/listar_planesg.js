@@ -47,26 +47,20 @@ function LlenaTabla(datos) {
             columna.push(element.delegada);
         }
         columna.push(element.fechas);
-        let editar = false;
-        if(permisos.editar && permisos.editar.includes(parseInt(element.estado))){
-            editar = true;
-        }
         let conflicto = false;
         if (element.estado > 1) {
             conflicto = true;
         }
-        columna.push(plantillaHTML.itemAccionesTabla({
+        columna.push(plantillaHTML.itemAccionesPGTabla({
             id: element.id_accion,
-            id_accion: element.id_accion,
             estado: element.estado,
-            editar: editar,
+            editar: true,
             documentos: true,
             detalle: true,
             generar_pg: true,
             conflicto: conflicto,
             dec_firmada: element.dec_firmada,
             aprobar: true,
-            pg: true,
             archivo: element.archivo_firmado,
             equipo: true
         }));
@@ -79,9 +73,9 @@ function LlenaTabla(datos) {
         data: filas,
         columnDefs: [
             {targets: [0], className: "align-middle", width: "68px"},
-            {targets: [2], className: "align-middle", width: "270px"},
-            {targets: [2], className: "align-middle", width: "270px"},
-            {targets: targets, className: "align-middle text-center", width: "100px"},
+            {targets: [2], className: "align-middle", width: "280px"},
+            {targets: [3], className: "align-middle", width: "210px"},
+            {targets: targets, className: "align-middle text-center", width: "150px"},
             {targets: '_all', className: "align-middle"}
         ],
         language: {url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/es-ES.json'}
@@ -98,7 +92,8 @@ function LimpiarTabla(idTabla) {
 }
 
 $('#dataTable').on('draw.dt', function () {
-    $('td i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    //$('td i').tooltip({template: '<div class="tooltip dtTooltip" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'});
+    $('td i').tooltip();
     $('#loading').hide();
 });
 
@@ -110,7 +105,6 @@ function Nuevo(id) {
     LimpiarTabla('dataTableUsuariosOut');
     let datos = {id}
     _RQ('GET','/back/usuarios_plan_gestion', datos, function(result) {$('#loading').hide();
-        console.log(result);
         DatosTablaUsuarios = result;
         $('#accion').html(plantillaHTML.options(result.acciones));
         Mostrar('modalNuevoPlan');
@@ -205,6 +199,9 @@ function ModtrarUsuariosOut(){
 }
 
 function ConfirmarGuardarEquipo() {
+    if ($('#idCreaEdita').val() != 0) {
+        $('#accion').val($('#idCreaEdita').val()).trigger('change');
+    }
     let valido = true;
     let accion = $('#accion').select2('val');
     if (accion == "") {
@@ -227,11 +224,15 @@ function ConfirmarGuardarEquipo() {
         arrUsuarios.forEach(element => {
             usuarios.push(arrNombres['N'+element]);
         });
-        let nombres = usuarios.join(', ');
-        let accion = $('#accion').select2('data')[0].text;
-        $('#confirmacionMsj').html('El equipo de trabajo de la accion "'+accion+'" quedaría asi: '+nombres+', ¿es correcto?');
+        let nombres = `<ul><li>${usuarios.join('</li><li>')}</li></ul>`;
+        let txtAccion = DatosTablaUsuarios.titulo;
+        if ($('#idCreaEdita').val() == 0) {
+            txtAccion = $('#accion').select2('data')[0].text;
+        }
+        $('#confirmacionMsj').html('<strong>Acción:</strong> '+txtAccion+'<br><br><strong>Equipo:</strong>'+nombres+'¿es correcto?');
         $('#confirmacionBtn').attr("onclick","GuardarNuevoPlan();");
-        $('#confirmacionMsj').css('font-size', '13px');
+        $('#confirmacionMsj').removeClass('text-center');
+        $('#confirmacionMsj').css({'font-size': '13px', 'text-align': 'left'});
         Mostrar('confirmacionModal');
     }
 }
@@ -246,7 +247,8 @@ function GuardarNuevoPlan(){
     _RQ('POST','/back/crear_actualizar_equipo_plangestion', datos, function(result) {
         _MSJ(result.tipo, (result.error != null)?result.error:result.txt, function() {
             Ocultar('modalNuevoPlan');
-            ConsultarPlanes();
+            //ConsultarPlanes();
+            location.reload();
         });
     });
 }
@@ -493,5 +495,7 @@ function DefinirFechaMaxima() {
 }
 
 function CambiarEquipo(id) {
+    $('#rowDatoAccion').hide();
+    $('#fecha_informe').val(id);
     Nuevo(id);
 }

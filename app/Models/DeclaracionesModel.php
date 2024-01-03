@@ -51,6 +51,7 @@ class DeclaracionesModel extends Model
         $usuario = UsuariosModel::where('id', $this->id_usuario)->first();
         return array(
             'nombre' => $usuario->nombre,
+            'cedula' => $usuario->cedula,
             'firma' => (isset($usuario->firmas[0]))?$usuario->firmas[0]->cnv_firma:'Firma'
         );
     }

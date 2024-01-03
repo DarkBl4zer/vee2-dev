@@ -25,6 +25,7 @@ Route::get('sinregistro', function () {
     return view('sinregistro');
 })->name('sinregistro');
 Route::get('/logout', [FrontendController::class, 'Logout'])->name('logout');
+Route::get('/info', [FrontendController::class, 'Info'])->name('info');
 Route::post('login', [BackendController::class, 'Login'])->name('login');
 Route::middleware('vee')->group(function () {
     Route::get('prueba', [BackendController::class, 'prueba'])->name('prueba');
@@ -91,6 +92,11 @@ Route::middleware('vee')->group(function () {
     Route::get('back/rechazos_pt', [PlanTrabajoController::class, 'RechazosPlanTrabajo']);
     Route::post('back/plantrabajo_respuesta', [PlanTrabajoController::class, 'PlanTrabajoRespuesta']);
     Route::get('back/puede_firmar_delegado', [PlanTrabajoController::class, 'PlanTrabajoPuedeFirmarDelegado']);
+    Route::get('back/delegados_para_cambio', [PlanTrabajoController::class, 'DelegadosParaCambio']);
+    Route::post('back/cambiar_delegado', [PlanTrabajoController::class, 'CambiarDelegado']);
+    Route::post('back/plantrabajo_modificar', [PlanTrabajoController::class, 'ModificarPT']);
+    Route::get('back/pt_regenerar_archivo', [PlanTrabajoController::class, 'PTRegenerarArchivo']);
+    Route::get('back/acc_regenerar_archivo', [PlanTrabajoController::class, 'ACCRegenerarArchivo']);
 
     /* ******************* PlanesGestion ******************* */
     Route::get('back/planes_gestion', [PlanGestionController::class, 'Planesgestion']);

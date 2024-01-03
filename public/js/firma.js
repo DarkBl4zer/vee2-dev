@@ -31,7 +31,11 @@ function GuardarFirma(){
         let datos = new FormData(document.getElementById('formFirma'));
         _RQ('POST','/back/guardar_frima', datos, function(result) {$('#loading').hide();
             _MSJ(result.tipo, result.txt, function() {
-                location.reload();
+                if (retorno == "") {
+                    location.reload();
+                } else {
+                    window.location.pathname = retorno;
+                }
             });
         }, true);
     }

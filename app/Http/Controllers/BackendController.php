@@ -14,6 +14,7 @@ use App\Models\PerfilesModel;
 use App\Models\PermisosModel;
 use App\Models\PlanesGestionModel;
 use App\Models\PlanesTrabajoModel;
+use App\Models\PlaTAccionModel;
 use App\Models\RechazosPtModel;
 use App\Models\RolesModel;
 use App\Models\RolSubMenuModel;
@@ -30,29 +31,16 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\App;
 use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
 
 class BackendController extends Controller
 {
     public function prueba(Request $request){
         $sesion = (object)$request->sesion;
-        $temas = TemasPModel::where('id_acta', 1)->where('activo', true)->where('eliminado', false)->get();
-        $idsTemas = array();
-        foreach($temas as $item){
-            array_push($idsTemas, $item->id);
-        }
-        $idsAcciones = array();
-        $accTP = AccionesModel::where('estado', '<', 8)->whereNull('id_temas')->whereIn('id_temap', $idsTemas)->get();
-        $accTS = AccionesModel::where('estado', '<', 8)->whereIn('id_temas', $idsTemas)->get();
-        foreach($accTP as $item){
-            array_push($idsAcciones, $item->id);
-        }
-        foreach($accTS as $item){
-            array_push($idsAcciones, $item->id);
-        }
-        $vaina = DocumentosModel::whereIn('id_accion', $idsAcciones)->where('n_tipo', 1)->get();
-        return $vaina;
+        return $sesion;
     }
+
     /* ====================================================== LOGIN ====================================================== */
     public function Login(Request $request){
         if (!isset($request->delegada) || !isset($request->cedula) || $request->delegada == "" || $request->cedula == "") {
@@ -65,7 +53,7 @@ class BackendController extends Controller
                 $festivos = FestivosModel::get();
                 $fechas = array();
                 foreach ($festivos as $festivo) {
-                    array_push($fechas, Carbon::createFromFormat('Y-m-d H:i:s', $festivo->fecha)->format('d.m.Y'));
+                    array_push($fechas, Carbon::createFromFormat('Y-m-d H:i:s', $festivo->fecha)->format('Y-m-d'));
                 }
                 $perfil = '';
                 if ($usuario->perfiles[0]->rol->id == 1) {
@@ -145,7 +133,7 @@ class BackendController extends Controller
 
     public function Notificaciones(Request $request){
         $sesion = (object)Session::get('UsuarioVee');
-        if ($request->todo) {
+        if (boolval($request->todo)) {
             $notificaciones = UsuarioNotificacionModel::where('id_usuario', $sesion->id)
                                                         ->where('eliminado', false)
                                                         ->where('id_perfil', $sesion->trabajo->id_perfil)
@@ -155,8 +143,7 @@ class BackendController extends Controller
             $notificaciones = UsuarioNotificacionModel::where('id_usuario', $sesion->id)
                                                         ->where('eliminado', false)
                                                         ->where('id_perfil', $sesion->trabajo->id_perfil)
-                                                        ->where('activo', true)
-                                                        ->orderBy('created_at', 'desc')->get();
+                                                        ->orderBy('created_at', 'desc')->take(3)->get();
             $activas = $notificaciones->where('activo', true)->count();
         }
         return response()->json(array(
@@ -516,6 +503,7 @@ class BackendController extends Controller
             TemasPModel::whereIn('id', $idsTemas)->update(array(
                 'id_acta' => $request->reemplazo
             ));
+            ActasModel::where('id', $request->id)->delete();
             DB::commit();
             return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
@@ -598,17 +586,25 @@ class BackendController extends Controller
             $index = 1;
             foreach($temasImport as $item){
                 $index++;
-                $acta = ActasModel::where('descripcion', strtoupper(trim($item['acta'])))->where('id_delegada', $sesion->trabajo->id_delegada)->first();
+                if(is_null($item['acta']) || strtoupper(trim($item['acta'])) == ""){
+                    $acta= null;
+                } else{
+                    $acta = ActasModel::where('descripcion', strtoupper(trim($item['acta'])))->where('id_delegada', $sesion->trabajo->id_delegada)->first();
+                }
+                if(is_null($item['tema_principal']) || strtoupper(trim($item['tema_principal'])) == ""){
+                    array_push($noTemaP, $index);
+                    $siTemap = false;
+                } else{
+                    $siTemap = true;
+                }
                 if(!is_null($acta)){
-                    $tema_p = TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)
+                    if($siTemap){
+                        $tema_p = TemasPModel::where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)
                                             ->where('nombre', strtoupper(trim($item['tema_principal'])))
                                             ->where('activo', true)->where('eliminado', false)->first();
-                    $id_tema_p = 0;
-                    if(!is_null($tema_p)){
-                        $id_tema_p = $tema_p->id;
-                    } else{
-                        if(strtoupper(trim($item['tema_principal'])) == ""){
-                            array_push($noTemaP, $index);
+                        $id_tema_p = 0;
+                        if(!is_null($tema_p)){
+                            $id_tema_p = $tema_p->id;
                         } else{
                             $id_tema_p = TemasPModel::create(array(
                                 'id_delegada' => $sesion->trabajo->id_delegada,
@@ -617,16 +613,16 @@ class BackendController extends Controller
                                 'id_acta' => $acta->id
                             ))->id;
                         }
+                        TemasPModel::create(array(
+                            'id_delegada' => $sesion->trabajo->id_delegada,
+                            'nombre' => (strtoupper(trim($item['tema_secundario']))=="")?"NO APLICA":strtoupper(trim($item['tema_secundario'])),
+                            'nivel' => 2,
+                            'id_acta' => $acta->id,
+                            'id_padre' => $id_tema_p
+                        ));
                     }
-                    TemasPModel::create(array(
-                        'id_delegada' => $sesion->trabajo->id_delegada,
-                        'nombre' => (strtoupper(trim($item['tema_secundario']))=="")?"NO APLICA":strtoupper(trim($item['tema_secundario'])),
-                        'nivel' => 2,
-                        'id_acta' => $acta->id,
-                        'id_padre' => $id_tema_p
-                    ));
                 } else{
-                    array_push($noActas, $item['acta']);
+                    array_push($noActas, $index);
                 }
             }
             if(count($noActas) > 0 || count($noTemaP) > 0){

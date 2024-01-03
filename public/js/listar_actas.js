@@ -37,7 +37,7 @@ function LlenaTabla(datosTabla) {
             activo: element.activo,
             id: element.id
         }));
-        columna.push(plantillaHTML.itemAccionesTabla({
+        columna.push(plantillaHTML.itemAccionesActaTabla({
             id: element.id,
             reemplazar: true
         }));

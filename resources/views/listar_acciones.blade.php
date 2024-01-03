@@ -138,12 +138,12 @@ Acciones de prevención y control
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <label for="fechaPG">Fecha plan de gestión <sup style="color: var(--danger)">*</sup></label>
-                        <input class="form-control" id="fechaPG" type="text" placeholder="DD/MM/AAAA" autocomplete="off" style="width: 100%;" onchange="CambioFecha(this.id);" readonly="">
-                    </div>
-                    <div class="col-md-3">
                         <label for="fechaIni">Fecha inicio acción <sup style="color: var(--danger)">*</sup></label>
                         <input class="form-control" name="fechaIni" id="fechaIni" type="text" placeholder="DD/MM/AAAA" autocomplete="off" style="width: 100%;" onchange="CambioFecha(this.id);" readonly="">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaPG">Fecha plan de gestión <sup style="color: var(--danger)">*</sup></label>
+                        <input class="form-control" id="fechaPG" type="text" placeholder="DD/MM/AAAA" autocomplete="off" style="width: 100%;" onchange="CambioFecha(this.id);" readonly="">
                     </div>
                     <div class="col-md-3">
                         <label for="fechaFin">Fecha fin acción <sup style="color: var(--danger)">*</sup></label>
@@ -209,6 +209,42 @@ Acciones de prevención y control
                                 </tr>
                             </thead>
                             <tbody id="bodyTablaDetalle">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" >Cerrar</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal Cambio Delegado-->
+<div class="modal fade" id="modalCambioDelegado" tabindex="-1" role="dialog" aria-labelledby="modalCambioDelegadoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="modalCambioDelegadoLabel">Carbiar delegado(a) para esta acción</h6>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <table class="table table-striped table-bordered" style="font-size: 13px;">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Delegada</th>
+                                    <th scope="col">Usuario</th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyTablaDelegados">
                             </tbody>
                         </table>
                     </div>

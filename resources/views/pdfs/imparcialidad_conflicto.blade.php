@@ -50,24 +50,24 @@
     <div class="row">
         <div class="col-12">
             <p style="text-align: justify;">Yo <strong>{{$funcionario->nombre}}</strong> identificado(a) con cédula de ciudadanía: <strong>{{$funcionario->cedula}}</strong>, expedida en <strong>{{$declaracion["lugar_expedicion"]}}</strong> </p>
-            <p style="text-align: justify;">En mi calidad de <strong>{{($declaracion["tipoUsuario"]==1)?"Funcionario":"Contratista"}}</strong></p>
+            <p style="text-align: justify;">En mi calidad de <strong>{{($declaracion["funcionario"]==1)?"Funcionario":"Contratista"}}</strong></p>
             <p style="text-align: justify;">Nombre del cargo / Número del Contrato / Profesión: <strong>{{$declaracion["cargo"]}} / {{$declaracion["contrato"]}} / {{$declaracion["profesion"]}}</strong></p>
             <p style="text-align: justify;">Dependencia: <strong>{{$funcionario->delegada}}</strong></p>
-            <p style="text-align: justify;">Título de la Acción de Prevención y Control a la Función Pública y/o Seguimiento: <strong>{{$accion->titulo}}</strong></p>
-            <p style="text-align: justify;">Entidad (es) Vigilada (s):
+            <p style="text-align: justify;">Título de la Acción de Prevención y Control a la Función Pública y/o Seguimiento: <strong style="text-transform: uppercase !important">{{$accion->titulo}}</strong></p>
+            <p style="text-align: justify; margin-bottom: 5px;">Entidad (es) Vigilada (s):</p>
             <strong>
                 {!!$accion->entidades['string']!!}
-            </strong></p>
+            </strong>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="margin-top: 15px;">
         <div class="col-12">
             <strong>2.- DECLARACIÓN DE CONFLICTOS DE INTERÉS:</strong>
         </div>
     </div>
     <div class="row">
         <div class="col-12">
-            <p style="text-align: justify;">De conformidad con el principio de imparcialidad señalado en el numeral 3 del artículo 3 de la Ley 1437 de 2011, <strong>{{($declaracion["declara"]==1)?"SI":"NO"}}</strong> tengo conflictos de interés, ni me encuentro incurso (a) en las causales de impedimento establecidas en la Constitución y en la Ley, en especial las estipuladas en el artículo 11 ibídem, para el desarrollo de la acción de prevención y control a la función pública y/o seguimiento, al cual he sido designado (a) o asignado (a), por tal motivo declaro: </p>
+            <p style="text-align: justify;">De conformidad con el principio de imparcialidad señalado en el numeral 3 del artículo 3 de la Ley 1437 de 2011, <strong>{{($declaracion["conflicto"]==1)?"SI":"NO"}}</strong> tengo conflictos de interés, ni me encuentro incurso (a) en las causales de impedimento establecidas en la Constitución y en la Ley, en especial las estipuladas en el artículo 11 ibídem, para el desarrollo de la acción de prevención y control a la función pública y/o seguimiento, al cual he sido designado (a) o asignado (a), por tal motivo declaro: </p>
             <ol type="a">
                 <li style="text-align: justify;">Que a mi leal saber y entender, no tengo relaciones oficiales, profesionales, personales o financieras con la entidad (sujeta a vigilancia de la Personería de Bogotá, D.C.) y servidores públicos sujetos a examen, ni intereses comerciales, profesionales, financieros y/o económicos en actividades sujetas a control.</li>
                 <li style="text-align: justify;">Asimismo, tampoco tuve un desempeño previo en la ejecución de las actividades y operaciones relacionadas con los sujetos y objetos de control aquí declarados.</li>
@@ -141,7 +141,7 @@
                         </table>
                     </li>
                     <li>
-                        Explique brevemente la motivación del impedimento o del conflicto de interés (artículo 12 de la Ley 1437 de 2011): <strong>{{(isset($declaracion["motivo"]))?$declaracion["motivo"]:""}}</strong>
+                        Explique brevemente la motivación del impedimento o del conflicto de interés (artículo 12 de la Ley 1437 de 2011): <strong>{{(isset($declaracion["explicacion"]))?$declaracion["explicacion"]:""}}</strong>
                     </li>
                 </ol>
             </p>
@@ -167,8 +167,8 @@
             </p>
             @php
             $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
-            if (isset($declaracion["nuevaFecha"])) {
-                $fecha = Carbon\Carbon::createFromFormat('Y-m-d',  $declaracion["nuevaFecha"]);
+            if ($declaracion["firmado"]) {
+                $fecha = Carbon\Carbon::createFromFormat('Y-m-d H:i:s',  $declaracion["updated_at"]);
             } else {
                 $fecha = Carbon\Carbon::now();
             }

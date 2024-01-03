@@ -56,7 +56,7 @@ class PlanesGestionModel extends Model
     }
 
     public function getDeclaracionesAttribute(): Array{
-        $declaraciones = DeclaracionesModel::where('id_accion', $this->id_accion)->where('tipo_usuario', 'FUNCIONARIO')->get();
+        $declaraciones = DeclaracionesModel::where('id_accion', $this->id_accion)->where('activo', true)->where('tipo_usuario', 'FUNCIONARIO')->get();
         $funcionarios = [];
         foreach ($declaraciones as $item) {
             array_push($funcionarios, array(
@@ -87,7 +87,7 @@ class PlanesGestionModel extends Model
     }
 
     public function getFinformeAttribute(): String{
-        $finforme = Carbon::createFromFormat('Y-m-d h:m:s', $this->fecha_informe)->format('d/m/Y');
+        $finforme = Carbon::createFromFormat((env('DB_CONNECTION')=='mysql')?'Y-m-d':'Y-m-d H:i:s', $this->fecha_informe)->format('d/m/Y');
         return $finforme;
     }
 

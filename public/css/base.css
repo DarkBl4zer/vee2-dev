@@ -167,11 +167,19 @@ table.dataTable>thead .sorting:before, table.dataTable>thead .sorting:after, tab
 .send_chat{
     margin-top: 25px;
     background-color: var(--light);
-    padding: 15px;
+    padding: 20px 0px 24px 24px;
     border-radius: 5px;
 }
 
 .vertical_col{
     margin-top: auto;
     margin-bottom: auto;
+}
+
+#bodyTablaDetalle td{
+    vertical-align: middle;
+}
+
+.mayus{
+    text-transform: uppercase !important;
 }

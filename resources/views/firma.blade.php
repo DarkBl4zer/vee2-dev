@@ -76,6 +76,7 @@ Configurar Firma
 @endsection
 @section('Xscripts')
 <script type="text/javascript">
+    var retorno = "{{$retorno}}";
     var backFirma = {
         inpFirma: "{{$firma->inpFirma}}",
         escFirma: {{($firma->escFirma)?$firma->escFirma:0}},

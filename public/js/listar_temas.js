@@ -241,10 +241,10 @@ function CargaMasiva(){
             if (!result.estado) {
                 let msj = `<p></p>El archivo de carga masiva contiene los siguientes errores: `;
                 if(result.actas.length > 0){
-                    msj += `<br>La(s) siguiente(s) acta(s) no existe(n) en el sistema: ${result.actas.join(', ')}`
+                    msj += `<br>No se encontraron las actas en el sistema filas: ${result.actas.join(', ')}`
                 }
                 if(result.temasp.length > 0){
-                    msj += `<br>Se encontraron temas principales en blanco en la(s) fila(s): ${result.temasp.join(', ')}</p>`
+                    msj += `<br>Temas principales en blanco en las filas: ${result.temasp.join(', ')}</p>`
                 }
                 $('#erroresMsj').html(msj);
                 Mostrar('modalErrores');

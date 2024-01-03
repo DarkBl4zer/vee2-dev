@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AccionEntidadModel;
 use App\Models\AccionesModel;
 use App\Models\ActasModel;
+use App\Models\AsignacionesModel;
 use App\Models\DeclaracionesModel;
 use App\Models\DeclaracionTablaModel;
 use App\Models\DelegadaEntidadModel;
@@ -34,11 +35,23 @@ class PlanTrabajoController extends Controller
             if($sesion->trabajo->id_rol == 2){
                 $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
                 $datos = AccionesModel::select('vee2_acciones.*')->join('view_vee_delegadas', 'vee2_acciones.id_delegada', 'view_vee_delegadas.id')
-                ->where('vee2_acciones.year', $request->periodo)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                ->where('vee2_acciones.year', $request->periodo)->where('vee2_acciones.activo', true)->where('view_vee_delegadas.tipo', $tipoDelegada)
                 ->orderBy('vee2_acciones.id', 'asc')->get();
+                $counter = 0;
+                foreach ($datos as $item) {
+                    $datos[$counter]->dec_firmada = "";
+                    if ($item->estado > 1) {
+                        $temp = DeclaracionesModel::where('id_accion', $item->id)->where('tipo_usuario', 'DELEGADO')->where('activo', true)->where('previa', false)->where('firmado', true)->first();
+                        if(!is_null($temp)){
+                            $datos[$counter]->dec_firmada = $temp->archivo_firmado;
+                            $datos[$counter]->conflicto = $temp->conflicto;
+                        }
+                    }
+                    $counter++;
+                }
             }
             if($sesion->trabajo->id_rol > 2){
-                $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+                $datos = AccionesModel::where('year', $request->periodo)->where('activo', true)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
                 $counter = 0;
                 foreach ($datos as $item) {
                     $datos[$counter]->dec_firmada = "";
@@ -46,12 +59,30 @@ class PlanTrabajoController extends Controller
                         $temp = DeclaracionesModel::where('id_accion', $item->id)->where('id_usuario', $sesion->id)->where('activo', true)->where('previa', false)->where('firmado', true)->first();
                         if(!is_null($temp)){
                             $datos[$counter]->dec_firmada = $temp->archivo_firmado;
+                            $datos[$counter]->conflicto = $temp->conflicto;
                         }
                     }
                     $counter++;
                 }
             }
-            return response()->json($datos);
+            $asignado = false;
+            $asignaciones = AsignacionesModel::where('tipo', 'DELEGADO')->where('activo', true)->where('id_usuario', $sesion->id)->get();
+            foreach($asignaciones as $item){
+                $item->accion->dec_firmada = "";
+                if ($item->accion->estado > 1) {
+                    $temp = DeclaracionesModel::where('id_accion', $item->accion->id)->where('id_usuario', $sesion->id)->where('activo', true)->where('previa', false)->where('firmado', true)->first();
+                    if(!is_null($temp)){
+                        $item->accion->dec_firmada = $temp->archivo_firmado;
+                        $item->accion->conflicto = $temp->conflicto;
+                    }
+                }
+                $asignado = true;
+                $datos->push($item->accion);
+            }
+            return response()->json(array(
+                'datos' => $datos,
+                'asignado' => $asignado
+            ));
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getTrace());
         }
@@ -98,8 +129,8 @@ class PlanTrabajoController extends Controller
             $new["id_actuacion"]=$request->id_actuacion;
             $new["id_temap"]=$request->id_temap;
             $new["id_temas"]=$request->id_temas;
-            $new["titulo"]=strtoupper($request->titulo);
-            $new["objetivo_general"]=strtoupper($request->objetivo_general);
+            $new["titulo"]=$request->titulo;
+            $new["objetivo_general"]=$request->objetivo_general;
             $new["fecha_plangestion"]=Carbon::createFromFormat('d/m/Y', $request->fecha_plangestion)->format('Y-m-d');
             $new["numero_profesionales"]=$request->numero_profesionales;
             $new["fecha_inicio"]=Carbon::createFromFormat('d/m/Y', $request->fecha_inicio)->format('Y-m-d');
@@ -124,7 +155,7 @@ class PlanTrabajoController extends Controller
                     'usuario' => $sesion->nombre,
                     'id_usuario' => $sesion->id,
                 ));
-                PlanesTrabajoModel::where('id', $accion->idPT)->update(array('estado' => 1));
+                //PlanesTrabajoModel::where('id', $accion->idPT)->update(array('estado' => 1));
             } else{
                 $new["id_delegada"]=$sesion->trabajo->id_delegada;
                 $new["year"]=date("Y");
@@ -205,14 +236,17 @@ class PlanTrabajoController extends Controller
             $insert = $this->InsertarTabla(2, $declaracion->id, $request->arrTabla2);
             DeclaracionTablaModel::insert($insert);;
             if(!$request->previa){
-                AccionesModel::where('id', $request->id_accion)->update([
-                    'estado' => 2
-                ]);
+                if($declaracion->tipo_usuario == 'DELEGADO'){
+                    AccionesModel::where('id', $request->id_accion)->update([
+                        'estado' => 2
+                    ]);
+                }
                 $archivo = $this->PDFDeclaracion($declaracion->id, true);
                 DeclaracionesModel::where('id', $declaracion->id)->update([
                     'archivo_firmado' => $archivo
                 ]);
-                $documento = DocumentosModel::where('id_accion', $request->id_accion)->where('n_tipo', 2)->first();
+                $tipo_usuario = ($declaracion->tipo_usuario == 'DELEGADO')?2:5;
+                $documento = DocumentosModel::where('id_accion', $request->id_accion)->where('n_tipo', $tipo_usuario)->first();
                 if($documento != null){
                     $documento->update(array(
                         'archivo' => $archivo,
@@ -224,7 +258,7 @@ class PlanTrabajoController extends Controller
                 } else{
                     DocumentosModel::create(array(
                         'id_accion' => $request->id_accion,
-                        'n_tipo' => ($declaracion->tipo_usuario == 'DELEGADO')?2:5,
+                        'n_tipo' => $tipo_usuario,
                         't_tipo' => 'DECLARACIÓN '.$declaracion->tipo_usuario,
                         'carpeta' => 'vee2_generados',
                         'archivo' => $archivo,
@@ -234,7 +268,7 @@ class PlanTrabajoController extends Controller
                         'id_usuario' => $sesion->id,
                     ));
                 }
-                if($declaracion->tipo_usuario == 'FUNCIONARIO'){
+                if(!$declaracion->conflicto && $declaracion->tipo_usuario == 'FUNCIONARIO'){
                     if ($this->TodasFirmadas($request->id_accion)) {
                         PlanesGestionModel::where('id_accion', $request->id_accion)->update([
                             'estado' => 3
@@ -247,6 +281,24 @@ class PlanTrabajoController extends Controller
                         );
                         $this->Notificar($noti);
                     }
+                }
+                if ($declaracion->tipo_usuario == 'DELEGADO' && $declaracion->conflicto) {
+                    $noti = (object)array(
+                        'para' => 'Coordinador',
+                        'tipo' => 'primary',
+                        'texto' => 'El delegado presenta conflicto de interes con la accion '.$declaracion->id_accion,
+                        'url' => '/planest/listar'
+                    );
+                    $this->Notificar($noti);
+                }
+                if ($declaracion->tipo_usuario == 'FUNCIONARIO' && $declaracion->conflicto) {
+                    $noti = (object)array(
+                        'para' => 'Delegado',
+                        'tipo' => 'primary',
+                        'texto' => 'El funcionario presenta conflicto de interes con la accion '.$declaracion->id_accion,
+                        'url' => '/planest/listar'
+                    );
+                    $this->Notificar($noti);
                 }
                 DB::commit();
                 return $this->MsjRespuesta(true);
@@ -298,18 +350,11 @@ class PlanTrabajoController extends Controller
         $pieT = pathinfo(public_path('img/pie_pag.png'), PATHINFO_EXTENSION);
         $pieD = file_get_contents(public_path('img/pie_pag.png'));
 
-        $perfil = null;
-        foreach ($sesion->perfiles as $item) {
-            if ($item->id == $sesion->trabajo->id_perfil) {
-                $perfil = $item;
-            }
-        }
-
         $funcionario = (object)array(
-            "imgFirma" => $this->ImagenFirma($sesion->firma),
-            "nombre" => $sesion->nombre,
-            "cedula" => $sesion->cedula,
-            "delegada" => $perfil->delegada->nombre,
+            "imgFirma" => $this->ImagenFirma($declaracion->usuario['firma']),
+            "nombre" => $declaracion->usuario['nombre'],
+            "cedula" => $declaracion->usuario['cedula'],
+            "delegada" => $accion->delegada,
             "logo" => 'data:image/'.$logoT.';base64,'.base64_encode($logoD),
             "pie" => 'data:image/'.$pieT.';base64,'.base64_encode($pieD),
         );
@@ -334,11 +379,11 @@ class PlanTrabajoController extends Controller
             if($sesion->trabajo->id_rol == 2){
                 $tipoDelegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
                 $datos = PlanesTrabajoModel::select('vee2_planes_trabajo.*')->join('view_vee_delegadas', 'vee2_planes_trabajo.id_delegada', 'view_vee_delegadas.id')
-                ->where('vee2_planes_trabajo.year', $request->periodo)->where('view_vee_delegadas.tipo', $tipoDelegada)
+                ->where('vee2_planes_trabajo.year', $request->periodo)->where('vee2_planes_trabajo.activo', true)->where('view_vee_delegadas.tipo', $tipoDelegada)
                 ->orderBy('vee2_planes_trabajo.id', 'asc')->orderBy('vee2_planes_trabajo.id_delegada', 'asc')->get();
             }
             if($sesion->trabajo->id_rol > 2){
-                $datos = PlanesTrabajoModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('version', 'asc')->get();
+                $datos = PlanesTrabajoModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->where('activo', true)->orderBy('version', 'asc')->get();
             }
             return response()->json($datos);
         } catch (Exception $ex) {
@@ -350,9 +395,18 @@ class PlanTrabajoController extends Controller
         try {
             $sesion = (object)$request->sesion;
             if($sesion->trabajo->id_rol < 3){
-                $datos = AccionesModel::where('year', $request->periodo)->orderBy('id', 'asc')->get();
+                $datos = AccionesModel::where('year', $request->periodo)->where('activo', true)->orderBy('id', 'asc')->get();
             } else{
-                $datos = AccionesModel::where('year', $request->periodo)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+                $conflictos = DeclaracionesModel::where('id_usuario', $sesion->id)->where('tipo_usuario', 'DELEGADO')->where('firmado', true)->where('conflicto', true)->get();
+                $noIncluir = array();
+                foreach($conflictos as $item){
+                    array_push($noIncluir, $item->id_accion);
+                }
+                $datos = AccionesModel::where('year', $request->periodo)->where('activo', true)->whereNotIn('id', $noIncluir)->where('id_delegada', $sesion->trabajo->id_delegada)->orderBy('id', 'asc')->get();
+                $asignaciones = AsignacionesModel::where('tipo', 'DELEGADO')->where('activo', true)->where('id_usuario', $sesion->id)->get();
+                foreach($asignaciones as $item){
+                    $datos->push($item->accion);
+                }
             }
             $accionespt = [];
             if ($request->id != 0) {
@@ -362,7 +416,7 @@ class PlanTrabajoController extends Controller
             foreach ($datos as $item) {
                 $item->checked = false;
                 foreach ($accionespt as $acc) {
-                    if($item->id == $acc->id_accion){
+                    if($item->id == $acc->id_accion && $acc->accion->estado != 1){
                         $item->checked = true;
                         array_push($arr_select, intval($acc->id_accion));
                     }
@@ -383,11 +437,11 @@ class PlanTrabajoController extends Controller
             $sesion = (object)$request->sesion;
             $idModelo = $request->id;
             if ($request->id != 0) {
-                $PTAcc = PlaTAccionModel::where('id_plantrabajo', $request->id)->get();
-                foreach ($PTAcc as $item) {
-                    AccionesModel::where('id', $item->id_accion)->update(['estado' => 2]);
-                }
                 PlaTAccionModel::where('id_plantrabajo', $request->id)->delete();
+                /*$plantrabajo = PlanesTrabajoModel::where('id', $request->id)->fisrt();
+                if($plantrabajo->estado == 3){
+                    $plantrabajo->update(array('estado' => 4));
+                }*/
             } else{
                 PlanesTrabajoModel::where('year', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->update(array('vigente' => false));
                 $idModelo = PlanesTrabajoModel::create(array(
@@ -415,31 +469,61 @@ class PlanTrabajoController extends Controller
         DB::beginTransaction();
         try {
             $sesion = (object)$request->sesion;
+            $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
+            $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
+            $estadoActual = $plantrabajo->estado;
+            $plantrabajo->update(array(
+                'estado' => 2,
+                'archivo_firmado' => $archivo_firmado,
+                'id_delegado' => $sesion->id,
+                'fecha_delegado' => Carbon::now()->format('d/m/Y')
+            ));
+            if ($estadoActual == 1) {
+                $noti = (object)array(
+                    'para' => 'Coordinador',
+                    'tipo' => 'primary',
+                    'texto' => 'Solicitud de aprobación plan de trabajo',
+                    'url' => '/planest/listar'
+                );
+                $this->Notificar($noti);
+            }
+            foreach ($plantrabajo->acciones as $accion) {
+                $accion->update(array('estado' => 14));
+            }
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function FirmarPlanTrabajoCoordinador(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
             $date = Carbon::now()->format('YmdHisu');
             if (isset($request->inputActa)) {
                 $request->file('inputActa')->storeAs('vee2_cargados', 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension());
                 $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
                 $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
-                $estadoActual = $plantrabajo->estado;
                 $plantrabajo->update(array(
-                    'estado' => 2,
-                    'archivo_firmado' => $archivo_firmado,
+                    'estado' => 5,
                     'archivo_acta' => 'actapt_'.$request->id.'_'.$date.'.'.$request->file('inputActa')->extension(),
                     'original_acta' => $request->file('inputActa')->getClientOriginalName(),
-                    'id_delegado' => $sesion->id,
-                    'fecha_delegado' => Carbon::now()->format('d/m/Y')
+                    'archivo_firmado' => $archivo_firmado,
+                    'id_coordinador' => $sesion->id,
+                    'fecha_coordinador' => Carbon::now()->format('d/m/Y')
                 ));
-                if ($estadoActual == 1) {
-                    $noti = (object)array(
-                        'para' => 'Coordinador',
-                        'tipo' => 'primary',
-                        'texto' => 'Solicitud de aprobación plan de trabajo',
-                        'url' => '/planest/listar'
-                    );
-                    $this->Notificar($noti);
-                }
+                $noti = (object)array(
+                    'para' => 'Delegado',
+                    'id_delegada' => $plantrabajo->id_delegada,
+                    'tipo' => 'success',
+                    'texto' => 'Plan de trabajo aprobado',
+                    'url' => '/planest/listar'
+                );
+                $this->Notificar($noti);
                 foreach ($plantrabajo->acciones as $accion) {
-                    $accion->update(array('estado' => 14));
                     $documento1 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 3)->first();
                     if($documento1 != null){
                         $documento1->update(array(
@@ -462,63 +546,36 @@ class PlanTrabajoController extends Controller
                             'id_usuario' => $sesion->id,
                         ));
                     }
+                    $documento2 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 4)->first();
+                    if($documento2 != null){
+                        $documento2->update(array(
+                            'archivo' => $archivo_firmado,
+                            'n_original' => $archivo_firmado,
+                            'fecha' => Carbon::now()->format('d/m/Y'),
+                            'usuario' => $sesion->nombre,
+                            'id_usuario' => $sesion->id,
+                        ));
+                    } else{
+                        DocumentosModel::create(array(
+                            'id_accion' => $accion->id,
+                            'n_tipo' => 4,
+                            't_tipo' => 'PLAN DE TRABAJO FIRMADO',
+                            'carpeta' => 'vee2_generados',
+                            'archivo' => $archivo_firmado,
+                            'n_original' => $archivo_firmado,
+                            'fecha' => Carbon::now()->format('d/m/Y'),
+                            'usuario' => $sesion->nombre,
+                            'id_usuario' => $sesion->id,
+                        ));
+                    }
+                    $accion->update(array('estado' => 5));
                 }
                 DB::commit();
                 return $this->MsjRespuesta(true);
+            }else{
+                DB::rollBack();
+                return $this->MsjRespuesta(false, "Error con el archivo del acta.");
             }
-        } catch (Exception $ex) {
-            DB::rollBack();
-            return $this->MsjRespuesta(false, $ex->getTrace());
-        }
-    }
-
-    public function FirmarPlanTrabajoCoordinador(Request $request){
-        DB::beginTransaction();
-        try {
-            $sesion = (object)$request->sesion;
-            $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
-            $plantrabajo = PlanesTrabajoModel::where('id', $request->id)->first();
-            $plantrabajo->update(array(
-                'estado' => 5,
-                'archivo_firmado' => $archivo_firmado,
-                'id_coordinador' => $sesion->id,
-                'fecha_coordinador' => Carbon::now()->format('d/m/Y')
-            ));
-            $noti = (object)array(
-                'para' => 'Delegado',
-                'id_delegada' => $plantrabajo->id_delegada,
-                'tipo' => 'success',
-                'texto' => 'Plan de trabajo aprobado',
-                'url' => '/planest/listar'
-            );
-            $this->Notificar($noti);
-            foreach ($plantrabajo->acciones as $accion) {
-                $documento2 = DocumentosModel::where('id_accion', $accion->id)->where('n_tipo', 4)->first();
-                if($documento2 != null){
-                    $documento2->update(array(
-                        'archivo' => $archivo_firmado,
-                        'n_original' => $archivo_firmado,
-                        'fecha' => Carbon::now()->format('d/m/Y'),
-                        'usuario' => $sesion->nombre,
-                        'id_usuario' => $sesion->id,
-                    ));
-                } else{
-                    DocumentosModel::create(array(
-                        'id_accion' => $accion->id,
-                        'n_tipo' => 4,
-                        't_tipo' => 'PLAN DE TRABAJO FIRMADO',
-                        'carpeta' => 'vee2_generados',
-                        'archivo' => $archivo_firmado,
-                        'n_original' => $archivo_firmado,
-                        'fecha' => Carbon::now()->format('d/m/Y'),
-                        'usuario' => $sesion->nombre,
-                        'id_usuario' => $sesion->id,
-                    ));
-                }
-                $accion->update(array('estado' => 5));
-            }
-            DB::commit();
-            return $this->MsjRespuesta(true);
         } catch (Exception $ex) {
             DB::rollBack();
             return $this->MsjRespuesta(false, $ex->getTrace());
@@ -526,12 +583,12 @@ class PlanTrabajoController extends Controller
     }
 
     public function PreviaPlanTrabajo(Request $request){
-        try {
+        //try {
             $pdf = $this->PDFPlanTrabajo($request->id, false);
             return $pdf->stream();
-        } catch (Exception $ex) {
+        /*} catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getTrace());
-        }
+        }*/
     }
 
     private function PDFPlanTrabajo($idPT, $save){
@@ -558,13 +615,21 @@ class PlanTrabajoController extends Controller
                 "unchecked" => 'data:image/'.$uncheckedT.';base64,'.base64_encode($uncheckedD),
             );
         } else{
+            $coordinador_firma = $this->ImagenFirma($sesion->firma);
+            $coordinador_fecha = Carbon::now()->format('d/m/Y');
+            $coordinador_nombre = $sesion->nombre;
+            if(!is_null($plantrabajo->id_coordinador)){
+                $coordinador_firma = $this->ImagenFirma($plantrabajo->coordinador->firmas[0]->cnv_firma);
+                $coordinador_fecha = $plantrabajo->fecha_coordinador;
+                $coordinador_nombre = $plantrabajo->coordinador->nombre;
+            }
             $datos = (object)array(
                 'delegado_nombre' => $plantrabajo->delegado->nombre,
                 'delegado_firma' => $this->ImagenFirma($plantrabajo->delegado->firmas[0]->cnv_firma),
                 'delegado_fecha' => $plantrabajo->fecha_delegado,
-                'coordinador_nombre' => $sesion->nombre,
-                'coordinador_firma' => $this->ImagenFirma($sesion->firma),
-                'coordinador_fecha' => Carbon::now()->format('d/m/Y'),
+                'coordinador_nombre' => $coordinador_nombre,
+                'coordinador_firma' => $coordinador_firma,
+                'coordinador_fecha' => $coordinador_fecha,
                 "checked" => 'data:image/'.$checkedT.';base64,'.base64_encode($checkedD),
                 "unchecked" => 'data:image/'.$uncheckedT.';base64,'.base64_encode($uncheckedD),
             );
@@ -580,16 +645,6 @@ class PlanTrabajoController extends Controller
             return $nombreArchivo;
         } else{
             return $pdf;
-        }
-    }
-
-    private function TodasFirmadas($id_accion){
-        $sinConflicto = DeclaracionesModel::where('id_accion', $id_accion)->where('activo', true)->where('previa', false)->where('firmado', true)->where('conflicto', false)->count();
-        $total = DeclaracionesModel::where('id_accion', $id_accion)->where('activo', true)->count();
-        if($total == $sinConflicto){
-            return true;
-        } else{
-            return false;
         }
     }
 
@@ -708,6 +763,123 @@ class PlanTrabajoController extends Controller
         } catch (Exception $ex) {
             return $this->MsjRespuesta(false, $ex->getTrace());
         }
+    }
+
+    public function DelegadosParaCambio(Request $request){
+        try {
+            $sesion = (object)$request->sesion;
+            $tipo_delegada = ($sesion->trabajo->tipo_coord == "PD")?1:4;
+            $delegados = DB::table('vee2_perfiles')
+                            ->join('view_vee_delegadas', 'vee2_perfiles.id_delegada', 'view_vee_delegadas.id')
+                            ->join('vee2_usuarios', 'vee2_perfiles.id_usuario', 'vee2_usuarios.id')
+                            ->join('vee2_declaraciones', 'vee2_perfiles.id_usuario', '!=', 'vee2_declaraciones.id_usuario')
+                            ->where('vee2_perfiles.id_rol', 3)->where('vee2_perfiles.activo', true)->where('view_vee_delegadas.tipo', $tipo_delegada)->where('vee2_declaraciones.id_accion', $request->id)
+                            ->select('view_vee_delegadas.nombre as delegada', 'view_vee_delegadas.id as id_delegada', 'vee2_usuarios.id as id_usuario', 'vee2_usuarios.nombre')->get();
+            return response()->json($delegados);
+        } catch (Exception $ex) {
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function CambiarDelegado(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            AsignacionesModel::create(array(
+                'tipo' => 'DELEGADO',
+                'id_accion' => $request->id_accion,
+                'id_usuario' => $request->id_usuario
+            ));
+            DeclaracionesModel::create(array(
+                'id_accion' => $request->id_accion,
+                'id_usuario' => $request->id_usuario
+            ));
+            $noti = (object)array(
+                'para' => 'Usuario',
+                'tipo' => 'primary',
+                'texto' => 'Asignación de acción',
+                'url' => '/accionespyc/listar',
+                'usuario' => $request->id_usuario,
+                'rol' => 3,
+                'id_delegada' => $request->id_delegada
+            );
+            $this->Notificar($noti);
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function ModificarPT(Request $request){
+        DB::beginTransaction();
+        try {
+            $sesion = (object)$request->sesion;
+            $plant = PlanesTrabajoModel::where('id', $request->id)->first();
+            $idModelo = PlanesTrabajoModel::create(array(
+                'year' => $plant->year,
+                'id_delegada' => $plant->id_delegada,
+                'version' => $request->version
+            ))->id;
+            foreach ($plant->acciones as $item) {
+                $newAccion = $item->replicate();
+                $newAccion->estado = 3;
+                $newAccion->save();
+                $idAcc = $newAccion->id;
+                foreach($item->entidades['arr'] as $item2){
+                    AccionEntidadModel::create(array(
+                        'id_accion' => $idAcc,
+                        'id_entidad' => $item2
+                    ));
+                }
+                $declaracion = DeclaracionesModel::where('id_accion', $item->id)->first();
+                $newDec = $declaracion->replicate();
+                $newDec->id_accion = $idAcc;
+                $newDec->save();
+                $documentos = DocumentosModel::where('id_accion', $item->id)->whereIn('n_tipo', [1,2])->get();
+                foreach($documentos as $item3){
+                    $newDoc = $item3->replicate();
+                    $newDoc->id_accion = $idAcc;
+                    $newDoc->save();
+                }
+                PlaTAccionModel::create([
+                    'id_plantrabajo' => $idModelo,
+                    'id_accion' => $idAcc
+                ]);
+                AccionesModel::where('id', $item->id)->update(['activo' => false]);
+            }
+            $plant->update(array(
+                'vigente' => false,
+                'estado' => 6
+            ));
+            DB::commit();
+            return $this->MsjRespuesta(true);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->MsjRespuesta(false, $ex->getTrace());
+        }
+    }
+
+    public function PTRegenerarArchivo(Request $request){
+        $archivo_firmado = $this->PDFPlanTrabajo($request->id, true);
+        PlanesTrabajoModel::where('id', $request->id)->update(array(
+            'archivo_firmado' => $archivo_firmado
+        ));
+        return $archivo_firmado;
+    }
+
+    public function ACCRegenerarArchivo(Request $request){
+        $declaracion = DeclaracionesModel::where('id_accion', $request->id_accion)->where('id_usuario', $request->id_usuario)->first();
+        $archivoOrg = $declaracion->archivo_firmado;
+        $archivo = $this->PDFDeclaracion($declaracion->id, true);
+        $declaracion->timestamps = false;
+        $declaracion->archivo_firmado = $archivo;
+        $declaracion->save();
+        DocumentosModel::where('id_accion', $request->id_accion)->where('archivo', $archivoOrg)->update(array(
+            'archivo' => $archivo
+        ));
+        return "OK -> ".$request->id_accion;
     }
 
 }

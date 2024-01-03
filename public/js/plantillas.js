@@ -27,6 +27,14 @@ class PlantillaHTML{
         return html;
     }
 
+    itemAccionesActaTabla(data){
+        let html = "";
+        if (data.reemplazar && permisos.reemplazar) {
+            html += `<i class="fas fa-clone" data-toggle="tooltip" data-placement="top" title="Reemplazar" onclick="Reemplazar(${data.id});"></i>`;
+        }
+        return html;
+    }
+
     itemAccionesTabla(data){
         let html = "";
         if (data.documentos) {
@@ -38,37 +46,81 @@ class PlantillaHTML{
         if (data.editar && permisos.editar) {
             html += `<i class="fas fa-edit" data-toggle="tooltip" data-placement="top" title="Editar" onclick="Editar(${data.id});"></i>`;
         }
-        if (data.reemplazar && permisos.reemplazar) {
-            html += `<i class="fas fa-clone" data-toggle="tooltip" data-placement="top" title="Reemplazar" onclick="Reemplazar(${data.id});"></i>`;
-        }
-        if (data.eliminar) {
-            html += `<i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Eliminar" onclick="ConfirmarEliminar(${data.id});"></i>`;
-        }
-        if (data.guardar) {
-            html += `<i class="fas fa-save inputFila${data.id}" data-toggle="tooltip" data-placement="top" title="Guardar" onclick="ConfirmarGuardar(${data.id});"></i>`;
-        }
         if (data.conflicto && permisos.conflicto) {
-            let nuevo = false;
-            if (data.generar_pg && data.dec_firmada == null) {
-                nuevo = true;
-            }
-            if (!data.generar_pg && data.estado == 1) {
-                nuevo = true;
-            }
-            if (nuevo) {
+            if (data.estado == 1) {
                 html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearDeclaracion(${data.id});"></i>`;
             } else{
-                html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerDeclaracion(${data.id}, ${data.estado}, '${data.dec_firmada}');"></i>`;
+                if (data.dec_firmada == '') {
+                    html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearDeclaracion(${data.id});"></i>`;
+                } else {
+                    let conflicto = "";
+                    if (data.dec_conflicto=="1") {
+                        conflicto = '<i class="fas fa-exclamation" style="color: var(--danger); position: absolute; font-size: 16px; right: -4px;"></i>';
+                    }
+                    html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerDeclaracion(${data.id}, ${data.estado}, '${data.dec_firmada}');" style="position: relative;">${conflicto}</i>`;
+                }
             }
         }
+        if (permisos.cambiod && data.dec_conflicto) {
+            html += `<i class="fas fa-people-arrows" data-toggle="tooltip" data-placement="top" title="Delegado(a) con conflictos de interés" onclick="CambiarDelegado(${data.id})"></i>`;
+        }
+        return html;
+    }
+
+    itemAccionesPTTabla(data){
+        let html = "";
+        if (data.editar && permisos.editar) {
+            html += `<i class="fas fa-edit" data-toggle="tooltip" data-placement="top" title="Editar" onclick="Editar(${data.id});"></i>`;
+        }
         if (data.generar) {
-            if (data.estado == 1) {
+            if (data.estado == 1 || data.estado == 3) {
                 html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Generar/Firmar" onclick="GenerarFirmar(${data.id});"></i>`;
             } else{
                 html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Ver firmado" onclick="VerFirmado('${data.archivo}');"></i>`;
             }
         }
-        if (data.generar_pg) {
+        if (data.aprobar) {
+            if (permisos.aprobar && permisos.aprobar.includes(parseInt(data.estado)) && !data.r_activo) {
+                html += `<i class="fas fa-tasks" data-toggle="tooltip" data-placement="top" title="Aprobar/Rechazar" onclick="ConfirmarAprobar(${data.id}, ${data.estado});"></i>`;
+            }
+        }
+        if (data.rechazos) {
+            let respuesta = false;
+            if (permisos.respuesta && permisos.respuesta.includes(parseInt(data.estado))) {
+                respuesta = true;
+            }
+            if (data.r_activo) {
+                html += `<i class="fas fa-bell" data-toggle="tooltip" data-placement="top" title="Solicitudes de modificación" onclick="Rechazos(${data.id}, ${respuesta});" style="color: var(--orange);"></i>`;
+            } else {
+                html += `<i class="fas fa-bell-slash" data-toggle="tooltip" data-placement="top" title="Solicitudes de modificación" onclick="Rechazos(${data.id}, 'sin_nota');"></i>`;
+            }
+        }
+        if (permisos.modificar && permisos.modificar.includes(parseInt(data.estado))) {
+            html += `<i class="fas fa-sync-alt" data-toggle="tooltip" data-placement="top" title="Modificar plan de trabajo" onclick="ConfirmarModificar(${data.id});"></i>`;
+        }
+        return html;
+    }
+
+    itemAccionesPGTabla(data){
+        let html = "";
+        if (data.documentos) {
+            html += `<i class="fas fa-stamp" data-toggle="tooltip" data-placement="top" title="Documentos" onclick="DocumentosAccion(${data.id});"></i>`;
+        }
+        if (data.detalle) {
+            html += `<i class="fas fa-file-invoice" data-toggle="tooltip" data-placement="top" title="Detalle de la acción" onclick="VerDetalle(${data.id});"></i>`;
+        }
+        if (data.editar && permisos.editar && permisos.editar.includes(parseInt(data.estado))) {
+            html += `<i class="fas fa-edit" data-toggle="tooltip" data-placement="top" title="Editar" onclick="Editar(${data.id});"></i>`;
+        }
+        if (data.conflicto && permisos.conflicto) {
+            if (data.estado == 2 && data.dec_firmada == null) {
+                html += `<i class="fas fa-file-signature" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="CrearDeclaracion(${data.id});"></i>`;
+            }
+            if(data.estado > 2 || data.dec_firmada != null){
+                html += `<i class="fas fa-file-contract" data-toggle="tooltip" data-placement="top" title="Imparcialidad y conflictos de interés" onclick="VerDeclaracion(${data.id}, ${data.estado}, '${data.dec_firmada}');"></i>`;
+            }
+        }
+        if (data.generar) {
             if(data.estado > 1 && data.estado < 8){
                 html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Vista previa plan de gestión" onclick="VistaPrevia(${data.id}, ${data.estado});"></i>`;
             }
@@ -76,15 +128,12 @@ class PlantillaHTML{
                 html += `<i class="fas fa-file-pdf" data-toggle="tooltip" data-placement="top" title="Ver firmado" onclick="VerFirmado('${data.archivo}');"></i>`;
             }
         }
-        if (data.next) {
-            html += `<i class="fas fa-forward" data-toggle="tooltip" data-placement="top" title="Siguiente" onclick="Siguiente(${data.id});"></i>`;
-        }
         if (data.aprobar) {
-            let title = 'Aprobar/Rechazar';
-            if (data.pg && data.estado == 3) {
+            let title = '';
+            if (data.estado == 3) {
                 title = 'Viabilidad delegado';
             }
-            if (data.pg && data.estado == 4) {
+            if (data.estado == 4) {
                 title = 'Mesa trabajo delegado';
             }
             if (permisos.aprobar && permisos.aprobar.includes(parseInt(data.estado))) {
@@ -102,7 +151,7 @@ class PlantillaHTML{
                 html += `<i class="fas fa-bell-slash" data-toggle="tooltip" data-placement="top" title="Solicitudes de modificación" onclick="Rechazos(${data.id}, 'sin_nota');"></i>`;
             }
         }
-        if (data.equipo) {
+        if (permisos.equipo && permisos.equipo.includes(parseInt(data.estado))) {
             html += `<i class="fas fa-users-cog" data-toggle="tooltip" data-placement="top" title="Cambiar equipo" onclick="CambiarEquipo(${data.id});"></i>`;
         }
         return html;
@@ -199,7 +248,7 @@ class PlantillaHTML{
         return `
         <tr><td>Número</td><td>${data.numero}</td></tr>
         <tr><td>Tipo de actuación</td><td>${data.actuacion}</td></tr>
-        <tr><td>Acción para seguimiento</td><td>${data.padre}</td></tr>
+        <tr><td>Acción para seguimiento</td><td>${(data.id_padre!=null)?'APC'+data.id_padre+' - '+data.padre.titulo:''}</td></tr>
         <tr><td>Tema principal</td><td>${(data.archivoacta.padre != null)?data.archivoacta.padre:data.archivoacta.tema}</td></tr>
         <tr><td>Tema secundario</td><td>${(data.archivoacta.padre != null)?data.archivoacta.tema:''}</td></tr>
         <tr><td>Título</td><td>${data.titulo}</td></tr>
@@ -213,9 +262,9 @@ class PlantillaHTML{
     }
 
     itemVigente(data){
-        let html = `<button type="button" class="btn btn-outline-light btn-lg" style="padding: 14px 34px;" onclick="Vigente(${data.id});"></button>`;
+        let html = '';
         if (data.vigente == '1') {
-            html = '<i class="fas fa-check"></i>';
+            html = '<i class="fas fa-check" style="cursor: default;"></i>';
         }
         return html;
     }
@@ -251,6 +300,18 @@ class PlantillaHTML{
                 `;
             }
             html += rechazo+respuesta;
+        });
+        return html;
+    }
+
+    itemsTablaDelegados(data){
+        let html = '';
+        data.forEach(element => {
+            html += `<tr>
+                <td>${element.delegada}</td>
+                <td>${element.nombre}</td>
+                <td style="vertical-align: middle;"><button type="button" class="btn btn-primary btn-sm" onclick="SeleccionarDelegado(${element.id_usuario}, ${element.id_delegada});">Seleccionar</button></td>
+            </tr>`;
         });
         return html;
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConfiguracionesModel;
+use App\Models\DeclaracionesModel;
 use App\Models\PerfilesModel;
 use App\Models\UsuarioNotificacionModel;
 use Carbon\Carbon;
@@ -108,6 +109,9 @@ class Controller extends BaseController
         if ($noti->para == 'Funcionarios') {
             $perfiles = PerfilesModel::whereIn('id_usuario', $noti->funcionarios)->where('id_rol', 5)->where('activo', true)->where('id_delegada', $delegada)->get();
         }
+        if ($noti->para == 'Usuario') {
+            $perfiles = PerfilesModel::where('id_usuario', $noti->usuario)->where('id_rol', $noti->rol)->where('activo', true)->where('id_delegada', $delegada)->get();
+        }
         foreach ($perfiles as $item) {
             UsuarioNotificacionModel::create(array(
                 'id_usuario' => $item->id_usuario,
@@ -121,7 +125,7 @@ class Controller extends BaseController
 
     function DescontarDiasHabiles($fecha, $dias){
         $sesion = (object)Session::get('UsuarioVee');
-        $fecha_inicio = Carbon::createFromFormat('Y-m-d H:i:s', $fecha);
+        $fecha_inicio = Carbon::createFromFormat((env('DB_CONNECTION')=='mysql')?'Y-m-d':'Y-m-d H:i:s', $fecha);
         $x = 0;
         $fecha_fin = null;
         $diaTemp = $fecha_inicio;
@@ -137,6 +141,16 @@ class Controller extends BaseController
             }
         }
         return $fecha_fin;
+    }
+
+    function TodasFirmadas($id_accion){
+        $sinConflicto = DeclaracionesModel::where('id_accion', $id_accion)->where('activo', true)->where('previa', false)->where('firmado', true)->where('conflicto', false)->count();
+        $total = DeclaracionesModel::where('id_accion', $id_accion)->where('activo', true)->count();
+        if($total == $sinConflicto){
+            return true;
+        } else{
+            return false;
+        }
     }
 
 }

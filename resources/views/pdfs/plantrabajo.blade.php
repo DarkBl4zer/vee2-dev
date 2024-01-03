@@ -57,7 +57,7 @@
                 <td style="padding-left: 5px;">Personería Delegada o Local a la que pertenece</td>
                 <td style="padding-left: 5px;">Actuación</td>
                 <td style="padding-left: 5px;">Título del informe de la acción de Prevención y Control a la Función Pública a la cual se le va a realizar seguimiento</td>
-                <td style="padding-left: 5px;">Cordis mediante el cual el informe de la acción de Prevención y Control a la Función Pública fue remitido a la(s) entidad(es) vigilada(s)</td>
+                <td style="padding-left: 5px;">SIRIUS mediante el cual el informe de la acción de Prevención y Control a la Función Pública fue remitido a la(s) entidad(es) vigilada(s)</td>
                 <td style="padding-left: 5px;">Título de la acción de Prevención y Control a la Función Pública</td>
                 <td style="padding-left: 5px;">Objetivo general de la acción de Prevención y Control a la Función Pública</td>
                 <td style="padding-left: 5px;">Fecha en la que se radicará el Plan de Gestión de la acción de Prevención y Control a la Función Pública, en la Personería Delegada para la Coordinación respectiva. </td>
@@ -72,16 +72,16 @@
                 <td style="text-align: center;">{{$PTA->accion->numero}}</td>
                 <td style="padding-left: 5px;">{{$PTA->accion->delegada}}</td>
                 <td style="padding-left: 5px;">{{$PTA->accion->actuacion}}</td>
-                <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->padre->titulo:""}}</td>
-                <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->padre->cordis:""}}</td>
-                <td style="padding-left: 5px;">{{$PTA->accion->titulo}}</td>
-                <td style="padding-left: 5px;">{{$PTA->accion->objetivo_general}}</td>
-                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $PTA->accion->fecha_plangestion)->format('d/m/Y')}}</td>
-                <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->archivoacta->tema:""}}</td>
+                <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?'APC'.$PTA->accion->id_padre.' - '.$PTA->accion->padre['titulo']:""}}</td>
+                <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->padre['cordis']:""}}</td>
+                <td style="padding-left: 5px; text-transform: uppercase;">{{$PTA->accion->titulo}}</td>
+                <td style="padding-left: 5px; text-transform: uppercase;">{{$PTA->accion->objetivo_general}}</td>
+                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat((env('DB_CONNECTION')=='mysql')?'Y-m-d':'Y-m-d H:i:s', $PTA->accion->fecha_plangestion)->format('d/m/Y')}}</td>
+                <td style="padding-left: 5px;">{{(!is_null($PTA->accion->id_padre))?$PTA->accion->archivoacta['tema']:""}}</td>
                 <td style="padding-left: 5px;">{!!$PTA->accion->entidades['string']!!}</td>
                 <td style="text-align: center;">{{$PTA->accion->numero_profesionales}}</td>
-                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $PTA->accion->fecha_inicio)->format('d/m/Y')}}</td>
-                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $PTA->accion->fecha_final)->format('d/m/Y')}}</td>
+                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat((env('DB_CONNECTION')=='mysql')?'Y-m-d':'Y-m-d H:i:s', $PTA->accion->fecha_inicio)->format('d/m/Y')}}</td>
+                <td style="text-align: center;">{{\Carbon\Carbon::createFromFormat((env('DB_CONNECTION')=='mysql')?'Y-m-d':'Y-m-d H:i:s', $PTA->accion->fecha_final)->format('d/m/Y')}}</td>
             </tr>
             @endforeach
         </table>

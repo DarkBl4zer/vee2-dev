@@ -12,6 +12,7 @@ use App\Models\PlanesGestionModel;
 use App\Models\PlanesTrabajoModel;
 use App\Models\RolesModel;
 use App\Models\TemasPModel;
+use App\Models\TerminadasModel;
 use App\Models\UsuarioNotificacionModel;
 use App\Models\UsuariosModel;
 use Illuminate\Http\Request;
@@ -23,9 +24,16 @@ use Illuminate\Support\Str;
 
 class FrontendController extends Controller
 {
+
+    public function Info(){
+        return view('infophp');
+    }
+
     public function Logout(){
         Session::forget('UsuarioVee');
-        return Redirect::to(route('fake_login'));
+        //return Redirect::to(route('fake_login'));
+        $config = ConfiguracionesModel::where('nombre', 'UrlSinproc')->first();
+        return redirect($config->t_valor."menuBootstrap.php");
     }
 
     public function Inicio(Request $request){
@@ -84,7 +92,8 @@ class FrontendController extends Controller
                 "escFirma" => null
             );
         }
-        return view('firma', compact('sesion', 'firma', 'slag'));
+        $retorno = (isset($request->retorno))?$request->retorno:"";
+        return view('firma', compact('sesion', 'firma', 'slag', 'retorno'));
     }
 
     public function ConfigListas(Request $request){
@@ -135,7 +144,8 @@ class FrontendController extends Controller
                                 ->groupBy('vee2_acciones.year')->orderBy('vee2_acciones.year', 'desc')->get();
         }
         if($sesion->trabajo->id_rol > 2){
-            $terminadas = AccionesModel::where('activo', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', 13)->orderBy('id', 'desc')->take(100)->get();
+            $terminadas = TerminadasModel::where('id_delegada', $sesion->trabajo->id_delegada)->get();
+            // AccionesModel::where('activo', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('estado', 13)->orderBy('id', 'desc')->take(100)->get();
             $temasp = TemasPModel::where('activo', true)->where('eliminado', false)->where('id_delegada', $sesion->trabajo->id_delegada)->where('nivel', 1)->get();
             $years = AccionesModel::select('year')->where('year', '!=', date("Y"))->where('id_delegada', $sesion->trabajo->id_delegada)->groupBy('year')->orderBy('year', 'desc')->get();
         }
@@ -143,8 +153,8 @@ class FrontendController extends Controller
 
         $paraSeguimiento = "";
         foreach ($terminadas as $item) {
-            $nombre = Str::limit($item->nombre, 50, ' (...)');
-            $paraSeguimiento .= '<option value="'.$item->id.'">'.$nombre.'</option>';
+            $nombre = Str::limit($item->titulo, 150, ' (...)');
+            $paraSeguimiento .= '<option value="'.$item->id_accion.'">APC'.$item->id_accion.' - '.$nombre.'</option>';
         }
         $profesiones = ListasModel::where('tipo', 'profesiones')->where('activo', true)->get();
         $cargos = CargosModel::orderBy('nombre_cargo', 'asc')->get();

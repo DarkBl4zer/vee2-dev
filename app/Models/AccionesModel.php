@@ -35,13 +35,13 @@ class AccionesModel extends Model
 
     public function getNumeroAttribute(): String{
         $actuaciones = ['', 'APC', 'SEG', 'SEGD', 'REVC'];
-        return $actuaciones[$this->id_actuacion].$this->id;
+        return $actuaciones[$this->id_actuacion].sprintf('%03d', $this->id);
     }
 
     public function getEntidadesAttribute(): Array{
         $entidades = AccionEntidadModel::where('id_accion', $this->id)->where('activo', true)->get();
         $arr = array();
-        $string = '<ul style="padding-left: 15px;">';
+        $string = '<ul style="padding-left: 15px; margin-bottom: 0px;">';
         foreach ($entidades as $item) {
             $string .= '<li>'.$item->entidad->nombre.'</li>';
             array_push($arr, $item->id_entidad);
@@ -91,7 +91,7 @@ class AccionesModel extends Model
     public function getPadreAttribute(): Array{
         $padre = array();
         if (!is_null($this->id_padre)) {
-            $temp = AccionesModel::where('id', $this->id_padre)->first();
+            $temp = TerminadasModel::where('id_accion', $this->id_padre)->first();
             $padre = array(
                 'titulo' => $temp->titulo,
                 'cordis' => $temp->cordis
